@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="工作台">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%231a1a2e'/><text x='50' y='68' text-anchor='middle' fill='white' font-size='50' font-family='sans-serif'>台</text></svg>">
+<title>我的工作台</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; background: #f5f5f7; color: #1a1a2e; -webkit-tap-highlight-color: transparent; padding-bottom: 24px; }
+.header { background: #1a1a2e; color: #fff; padding: 16px 20px; padding-top: max(16px, env(safe-area-inset-top)); position: sticky; top: 0; z-index: 10; }
+.header h1 { font-size: 20px; font-weight: 600; }
+.header .date { font-size: 13px; opacity: 0.7; margin-top: 2px; display: flex; gap: 16px; }
+.header .today-done { color: #34c759; }
+.container { max-width: 600px; margin: 0 auto; padding: 12px 16px; }
+.section { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.section-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.section-title .icon { font-size: 18px; }
+.section-title .arrow { font-size: 12px; color: #bbb; margin-left: auto; transition: transform 0.2s; }
+.section-title.open .arrow { transform: rotate(180deg); }
+.section-body.hidden { display: none; }
+
+.habits { display: flex; gap: 10px; flex-wrap: wrap; }
+.habit-card { flex: 1; min-width: 100px; background: #f8f9fa; border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; user-select: none; transition: all 0.15s; border: 2px solid transparent; }
+.habit-card:active { transform: scale(0.96); }
+.habit-card.done { border-color: #34c759; background: #f0fff4; }
+.habit-card .habit-icon { font-size: 28px; margin-bottom: 4px; }
+.habit-card .habit-name { font-size: 13px; font-weight: 500; }
+
+/* Arabic */
+.phase-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 10px; background: #e8f0fe; color: #4a6fa5; margin-bottom: 10px; }
+.arabic-task { display: flex; align-items: flex-start; gap: 10px; padding: 10px; margin-bottom: 6px; background: #fafbfc; border-radius: 10px; }
+.task-check { width: 22px; height: 22px; min-width: 22px; border-radius: 11px; border: 2px solid #ddd; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.15s; margin-top: 1px; }
+.task-check.done { background: #34c759; border-color: #34c759; color: #fff; }
+.task-info { flex: 1; }
+.task-info .task-desc { font-size: 14px; line-height: 1.4; }
+.task-info .task-time { font-size: 11px; color: #aaa; margin-top: 2px; }
+.task-info .task-detail { font-size: 12px; color: #888; margin-top: 4px; }
+.arabic-letters-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.arabic-progress { margin-top: 10px; display: flex; gap: 8px; align-items: center; }
+.arabic-progress .prog-label { font-size: 12px; color: #888; white-space: nowrap; }
+.arabic-progress .prog-bar { flex: 1; height: 6px; background: #e8e8ed; border-radius: 3px; overflow: hidden; }
+.arabic-progress .prog-fill { height: 100%; border-radius: 3px; background: #4a90d9; }
+.arabic-full-done, .habit-done-btn { margin-top: 10px; text-align: center; }
+.arabic-full-done button, .habit-done-btn button { padding: 10px 24px; border-radius: 10px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
+.btn-done { background: #34c759; color: #fff; }
+.btn-done:active { opacity: 0.8; }
+.btn-secondary { background: #888; color: #fff; }
+.arabic-phase-nav { display: flex; gap: 8px; margin-top: 12px; justify-content: center; }
+.arabic-phase-nav button { padding: 6px 16px; border-radius: 8px; border: 1px solid #ddd; background: #fff; font-size: 12px; cursor: pointer; font-family: inherit; }
+.arabic-phase-nav button.warn { border-color: #ff9500; color: #ff9500; }
+
+/* Reading / Sleep */
+.small-input, .product-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; font-family: inherit; background: #f8f9fa; margin-bottom: 8px; }
+.reading-log { font-size: 12px; color: #888; margin-top: 4px; }
+
+/* Routine (skincare-like) */
+.routine-list { margin-bottom: 8px; }
+.routine-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 4px; background: #fafbfc; border-radius: 8px; }
+.routine-item .drag-handle { color: #ccc; cursor: grab; font-size: 14px; padding: 2px; }
+.routine-item .routine-name { flex: 1; font-size: 14px; cursor: pointer; }
+.routine-item .routine-product { font-size: 11px; color: #4a90d9; margin-left: 4px; }
+.routine-item .routine-x { color: #ccc; cursor: pointer; padding: 2px 6px; font-size: 16px; }
+.routine-item.dragging { opacity: 0.5; }
+.routine-item.drag-over { border-top: 2px solid #4a90d9; }
+.routine-add-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.routine-add-row input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; font-family: inherit; background: #f8f9fa; }
+.routine-add-row button { padding: 8px 14px; border-radius: 8px; border: none; background: #1a1a2e; color: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
+
+/* Product detail popup */
+.product-detail { margin-top: 6px; padding: 8px 10px; background: #f0f4ff; border-radius: 8px; font-size: 12px; display: none; }
+.product-detail.show { display: block; }
+.product-detail .pd-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.product-detail .pd-row input { flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 12px; font-family: inherit; }
+.product-detail .pd-row select { padding: 6px 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 12px; }
+.rating-stars { display: flex; gap: 2px; cursor: pointer; }
+.rating-stars .star { font-size: 18px; color: #ddd; }
+.rating-stars .star.active { color: #ff9500; }
+
+/* Custom tasks */
+.custom-task-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.custom-task-row input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; font-family: inherit; background: #f8f9fa; }
+.custom-task-row button { padding: 8px 14px; border-radius: 8px; border: none; background: #1a1a2e; color: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
+.custom-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 4px; background: #fafbfc; border-radius: 8px; }
+.custom-item .custom-text { flex: 1; font-size: 14px; }
+.custom-item .custom-x { color: #ccc; cursor: pointer; padding: 2px 6px; font-size: 16px; }
+
+/* Notes */
+.note-input-area { margin-bottom: 12px; }
+.note-input-area textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e0e0e0; font-size: 14px; font-family: inherit; background: #f8f9fa; min-height: 80px; resize: vertical; }
+.note-input-area .note-actions { display: flex; gap: 8px; margin-top: 8px; }
+.note-input-area .note-actions button { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
+.btn-save { background: #1a1a2e; color: #fff; flex: 1; }
+.btn-save:active { opacity: 0.8; }
+.btn-tag { background: #f0f0f5; color: #666; font-size: 12px !important; padding: 8px 10px !important; border: 1px solid #e0e0e0 !important; }
+.btn-tag:active { background: #e0e0e5; }
+.note-list { list-style: none; }
+.note-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.note-item:last-child { border-bottom: none; }
+.note-item .note-date { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+.note-item .note-body { font-size: 14px; white-space: pre-wrap; line-height: 1.5; }
+.note-item .note-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.note-item .note-tag { font-size: 10px; background: #e8e8ed; color: #888; padding: 2px 8px; border-radius: 10px; }
+.note-delete { float: right; background: none; border: none; color: #ccc; font-size: 16px; cursor: pointer; padding: 0 4px; margin-top: -2px; }
+.tag-filter { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+.tag-filter .tfilter { font-size: 11px; padding: 4px 10px; border-radius: 12px; border: 1px solid #e0e0e0; background: #fff; cursor: pointer; font-family: inherit; }
+.tag-filter .tfilter.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
+.toast.show { opacity: 1; }
+.empty { text-align: center; color: #bbb; padding: 16px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>我的工作台</h1>
+  <div class="date" id="todayDate"></div>
+</div>
+
+<div class="container">
+
+  <!-- Top cards -->
+  <div class="section">
+    <div class="habits" id="habitList"></div>
+  </div>
+
+  <!-- ARABIC -->
+  <div class="section">
+    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">📖</span> 阿语学习 <span style="font-size:12px;color:#aaa;font-weight:400;margin-left:4px;" id="arabicTimeEst"></span><span class="arrow">▾</span></div>
+    <div class="section-body" id="arabicBody"><div id="arabicPlan"></div></div>
+  </div>
+
+  <!-- READING -->
+  <div class="section">
+    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">📚</span> 阅读 <span class="arrow">▾</span></div>
+    <div class="section-body" id="readingBody"><div id="readingPanel"></div></div>
+  </div>
+
+  <!-- SKINCARE -->
+  <div class="section">
+    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">🧴</span> 护肤 <span class="arrow">▾</span></div>
+    <div class="section-body" id="skincareBody"><div id="skincarePanel"></div></div>
+  </div>
+
+  <!-- SLEEP -->
+  <div class="section">
+    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">💤</span> 早睡 <span class="arrow">▾</span></div>
+    <div class="section-body" id="sleepBody"><div id="sleepPanel"></div></div>
+  </div>
+
+  <!-- CUSTOM -->
+  <div class="section">
+    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">📋</span> 自定义任务 <span style="font-size:12px;color:#aaa;font-weight:400;margin-left:4px;">自由添加</span><span class="arrow">▾</span></div>
+    <div class="section-body" id="customBody"><div id="customPanel"></div></div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="section">
+    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">💬</span> 随手记 <span style="font-size:12px;color:#aaa;font-weight:400;margin-left:4px;">组会 / 想法 / 待办</span><span class="arrow">▾</span></div>
+    <div class="section-body" id="notesBody">
+      <div class="note-input-area">
+        <textarea id="noteBody" placeholder="写什么都行……"></textarea>
+        <div class="note-actions">
+          <button class="btn-tag" onclick="addTag('组会')">组会</button>
+          <button class="btn-tag" onclick="addTag('TODO')">TODO</button>
+          <button class="btn-tag" onclick="addTag('想法')">想法</button>
+          <button class="btn-save" onclick="saveNote()">保存</button>
+        </div>
+      </div>
+      <div class="tag-filter" id="tagFilter"></div>
+      <ul class="note-list" id="noteList"></ul>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TODAY = new Date().toISOString().split('T')[0];
+function S(k, fb) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch(e) { return fb; } }
+function SS(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+let habitData = S('habit_data', {});
+let arabicTaskData = S('arabic_task_data', {});
+let arabicPhase = S('arabic_phase', 0);
+let arabicDay = S('arabic_day', 1);
+let readingData = S('reading_data', {});
+let skincareRoutine = S('skincare_routine', [
+  { id:'s1', name:'卸妆 / 洁面', product:'', rating:0, productNote:'' },
+  { id:'s2', name:'爽肤水', product:'', rating:0, productNote:'' },
+  { id:'s3', name:'精华', product:'', rating:0, productNote:'' },
+  { id:'s4', name:'眼霜', product:'', rating:0, productNote:'' },
+  { id:'s5', name:'面霜 / 乳液', product:'', rating:0, productNote:'' },
+  { id:'s6', name:'防晒', product:'', rating:0, productNote:'' },
+]);
+let skincareDone = S('skincare_done', {});
+let productLog = S('product_log', []); // [{id, name, category, date, price, rating, repurchase, notes}]
+let sleepData = S('sleep_data', {});
+let customData = S('custom_data', {});
+let notesData = S('notes_data', []);
+let currentFilter = S('note_filter', '');
+let currentTags = [];
+
+const HABIT_DEFS = [
+  { id: 'arabic', name: '阿语学习', icon: '📖' },
+  { id: 'reading', name: '阅读 30min', icon: '📚' },
+  { id: 'skincare', name: '护肤', icon: '🧴' },
+  { id: 'sleep', name: '早睡', icon: '💤' },
+];
+let nextId = S('skincare_next_id', 7);
+
+function renderAll() {
+  renderHabitCards();
+  renderArabicPlan();
+  renderReading();
+  renderSkincare();
+  renderSleep();
+  renderCustom();
+  renderNotes();
+  document.getElementById('todayDate').innerHTML =
+    TODAY + ' ' + ['日','一','二','三','四','五','六'][new Date().getDay()]
+    + ' <span class="today-done" id="todayDoneBadge"></span>';
+  updateDoneBadge();
+}
+function updateDoneBadge() {
+  const today = habitData[TODAY] || {};
+  const done = HABIT_DEFS.filter(h => today[h.id]).length;
+  const badge = document.getElementById('todayDoneBadge');
+  if (badge) badge.textContent = done === 4 ? '🎉 全部完成' : done + '/4';
+}
+function renderHabitCards() {
+  const today = habitData[TODAY] || {};
+  document.getElementById('habitList').innerHTML = HABIT_DEFS.map(h => {
+    const done = today[h.id] || false;
+    return '<div class="habit-card' + (done ? ' done' : '') + '" onclick="toggleHabit(\'' + h.id + '\')">'
+      + '<div class="habit-icon">' + h.icon + '</div>'
+      + '<div class="habit-name">' + (done ? '✅ ' : '') + h.name + '</div></div>';
+  }).join('');
+}
+function toggleHabit(id) {
+  if (!habitData[TODAY]) habitData[TODAY] = {};
+  habitData[TODAY][id] = !habitData[TODAY][id];
+  SS('habit_data', habitData);
+  renderAll();
+  toast(habitData[TODAY][id] ? '已打卡 🎉' : '已取消');
+}
+function toggleSection(el) { el.classList.toggle('open'); el.nextElementSibling.classList.toggle('hidden'); }
+
+// ========== ARABIC ==========
+const ALL_LETTERS = [
+  { name:'alif', iso:'ا', ini:'ا', med:'ـا', fin:'ـا', sound:'long vowel /aː/', nc:true },
+  { name:'bāʾ', iso:'ب', ini:'بـ', med:'ـبـ', fin:'ـب', sound:'/b/' },
+  { name:'tāʾ', iso:'ت', ini:'تـ', med:'ـتـ', fin:'ـت', sound:'/t/' },
+  { name:'thāʾ', iso:'ث', ini:'ثـ', med:'ـثـ', fin:'ـث', sound:'/θ/' },
+  { name:'jīm', iso:'ج', ini:'جـ', med:'ـجـ', fin:'ـج', sound:'/dʒ/' },
+  { name:'ḥāʾ', iso:'ح', ini:'حـ', med:'ـحـ', fin:'ـح', sound:'/ħ/' },
+  { name:'khāʾ', iso:'خ', ini:'خـ', med:'ـخـ', fin:'ـخ', sound:'/x/' },
+  { name:'dāl', iso:'د', ini:'د', med:'ـد', fin:'ـد', sound:'/d/', nc:true },
+  { name:'dhāl', iso:'ذ', ini:'ذ', med:'ـذ', fin:'ـذ', sound:'/ð/', nc:true },
+  { name:'rāʾ', iso:'ر', ini:'ر', med:'ـر', fin:'ـر', sound:'/r/', nc:true },
+  { name:'zāy', iso:'ز', ini:'ز', med:'ـز', fin:'ـز', sound:'/z/', nc:true },
+  { name:'sīn', iso:'س', ini:'سـ', med:'ـسـ', fin:'ـس', sound:'/s/' },
+  { name:'shīn', iso:'ش', ini:'شـ', med:'ـشـ', fin:'ـش', sound:'/ʃ/' },
+  { name:'ṣād', iso:'ص', ini:'صـ', med:'ـصـ', fin:'ـص', sound:'/sˤ/' },
+  { name:'ḍād', iso:'ض', ini:'ضـ', med:'ـضـ', fin:'ـض', sound:'/dˤ/' },
+  { name:'ṭāʾ', iso:'ط', ini:'طـ', med:'ـطـ', fin:'ـط', sound:'/tˤ/' },
+  { name:'ẓāʾ', iso:'ظ', ini:'ظـ', med:'ـظـ', fin:'ـظ', sound:'/ðˤ/' },
+  { name:'ʿayn', iso:'ع', ini:'عـ', med:'ـعـ', fin:'ـع', sound:'/ʕ/' },
+  { name:'ghayn', iso:'غ', ini:'غـ', med:'ـغـ', fin:'ـغ', sound:'/ɣ/' },
+  { name:'fāʾ', iso:'ف', ini:'فـ', med:'ـفـ', fin:'ـف', sound:'/f/' },
+  { name:'qāf', iso:'ق', ini:'قـ', med:'ـقـ', fin:'ـق', sound:'/q/' },
+  { name:'kāf', iso:'ك', ini:'كـ', med:'ـكـ', fin:'ـك', sound:'/k/' },
+  { name:'lām', iso:'ل', ini:'لـ', med:'ـلـ', fin:'ـل', sound:'/l/' },
+  { name:'mīm', iso:'م', ini:'مـ', med:'ـمـ', fin:'ـم', sound:'/m/' },
+  { name:'nūn', iso:'ن', ini:'نـ', med:'ـنـ', fin:'ـن', sound:'/n/' },
+  { name:'hāʾ', iso:'ه', ini:'هـ', med:'ـهـ', fin:'ـه', sound:'/h/' },
+  { name:'wāw', iso:'و', ini:'و', med:'ـو', fin:'ـو', sound:'/w/, long /uː/', nc:true },
+  { name:'yāʾ', iso:'ي', ini:'يـ', med:'ـيـ', fin:'ـي', sound:'/j/, long /iː/' },
+];
+function generateDailyPlan() {
+  const plans = [];
+  if (arabicPhase === 0) {
+    const d = arabicDay, groupIdx = Math.min(Math.floor((d-1)/4), 5), subDay = ((d-1)%4)+1;
+    const gStart = [0,7,11,15,19,24][groupIdx], gEnd = [6,10,14,18,23,27][groupIdx];
+    const gLetters = ALL_LETTERS.slice(gStart, gEnd+1);
+    const prevLetters = ALL_LETTERS.slice(0, gStart);
+    if (subDay === 1) {
+      const half = gLetters.slice(0, Math.ceil(gLetters.length/2));
+      plans.push({id:'new_letters',title:'学习新字母',desc:half.map(l=>l.name).join(' + '),
+        detail:'<div class="arabic-letters-row">'+half.map(l=>l.iso).join(' ')+'</div>每个字母抄写四种形态各一行。跟着视频读出发音，录下来自己对比。',time:'30 min'});
+    } else if (subDay === 2) {
+      const half = gLetters.slice(Math.ceil(gLetters.length/2));
+      plans.push({id:'new_letters',title:'学习新字母',desc:half.map(l=>l.name).join(' + '),
+        detail:'<div class="arabic-letters-row">'+half.map(l=>l.iso).join(' ')+'</div>每个字母抄写四种形态各一行。注意区分 emphatic 和非 emphatic。',time:'30 min'});
+    } else if (subDay === 3) {
+      plans.push({id:'review_group',title:'复习本组字母',desc:gLetters.map(l=>l.iso).join(' ')+' （'+gLetters.length+' 个）',
+        detail:'默写四种形态。不记得的翻回去看，红笔补上。',time:'25 min'});
+      plans.push({id:'pronounce',title:'发音精练',desc:'👄 录下自己朗读已学字母，对比标准发音',
+        detail:'YouTube: "Arabic Alphabet Pronunciation"。找出最不准的 3 个反复跟读。',time:'15 min'});
+    } else {
+      plans.push({id:'dictation',title:'听写练习',desc:'👂 用已学字母听写简单单词',detail:'用 Duolingo 字母练习，或让视频读字母/短词，你写下来。',time:'20 min'});
+      if (prevLetters.length >= 4) plans.push({id:'copy_words',title:'临摹短词',desc:'抄写 5 个用已学字母组成的单词',
+        detail:'如: باب (bāb), كتاب (kitāb), قلم (qalam)。每个词抄 5 遍。',time:'20 min'});
+    }
+    plans.push({id:'listen',title:'听力浸泡',desc:'🎧 听 10 分钟阿拉伯语',detail:'闭眼听 Arabic alphabet song 或阿拉伯语播客。不看字幕，感受声音节奏。',time:'10 min'});
+    if (d%7===6||d%7===0) plans.push({id:'handwriting',title:'书法练习（周末）',desc:'✍️ 用阿语字母拼写你的中文名字',detail:'尝试把"朱彦澄"拼成阿语。不要求准确，目标是习惯用阿语字母思考。',time:'15 min'});
+  } else if (arabicPhase === 1) {
+    plans.push({id:'daily_words',title:'每日生词',desc:'学习 8–10 个新单词，每个抄写 3 遍 + 标元音',detail:'从教材或常用 500 词表中选。不背拼写，先做到"看到能读"。',time:'30 min'});
+    plans.push({id:'flashcards',title:'闪卡复习',desc:'用 Quizlet/Anki 复习旧词',detail:'遮住阿语看中文 → 写阿语；遮住中文看阿语 → 读 + 翻译。每天至少过 20 个。',time:'20 min'});
+    plans.push({id:'dictation2',title:'听写单词',desc:'10 个学过的单词，听写下来',detail:'检查拼写和元音。错一个抄三遍。',time:'15 min'});
+    plans.push({id:'listen_phase1',title:'听力浸泡',desc:'🎧 阿拉伯语初学者对话视频',detail:'YouTube: "Arabic beginner conversation"。不看字幕 → 阿语字幕 → 中文翻译。',time:'15 min'});
+  } else if (arabicPhase === 2) {
+    plans.push({id:'daily_sentences',title:'每日短句',desc:'3–5 个短句，抄写 + 翻译 + 朗读',detail:'标出主语、谓语、宾语。关注名词句和动词句的结构。',time:'30 min'});
+    plans.push({id:'grammar',title:'语法点',desc:'每天一个基础语法点',detail:'如: 定冠词 الـ、阴阳性、名词句 vs 动词句、介词短语。',time:'20 min'});
+    plans.push({id:'back_translate',title:'回译练习',desc:'昨天的 3 个句子，看中文翻回阿语',detail:'不看原文，写完对照改错。红笔标出错处。',time:'15 min'});
+    plans.push({id:'read_aloud',title:'朗读录音',desc:'🎙️ 朗读本周所有句子并录音',detail:'回放对比标准发音。关注连读和停顿。',time:'10 min'});
+  }
+  return plans;
+}
+function renderArabicPlan() {
+  const plans = generateDailyPlan();
+  const todayTasks = arabicTaskData[TODAY] || {};
+  const allDone = plans.every(p => todayTasks[p.id]);
+  let totalMin = 0;
+  const phaseNames = ['字母关', '拼读关', '句法入门'];
+  let html = '<div class="phase-badge">阶段 ' + (arabicPhase+1) + '/3 · ' + phaseNames[arabicPhase] + ' · 第 ' + arabicDay + ' 天</div>';
+  plans.forEach(p => {
+    const done = todayTasks[p.id] || false;
+    html += '<div class="arabic-task"><div class="task-check' + (done ? ' done' : '') + '" onclick="toggleArabicTask(\'' + p.id + '\')">' + (done ? '✓' : '') + '</div>'
+      + '<div class="task-info"><div class="task-desc"><b>' + p.title + '</b> · ' + p.desc + '</div>'
+      + '<div class="task-detail">' + p.detail + '</div><div class="task-time">⏱ ' + p.time + '</div></div></div>';
+    const m = p.time.match(/(\d+)/); if (m) totalMin += parseInt(m[1]);
+  });
+  const doneCount = plans.filter(p => todayTasks[p.id]).length;
+  html += '<div class="arabic-progress"><div class="prog-label">' + doneCount + '/' + plans.length + ' 项</div>'
+    + '<div class="prog-bar"><div class="prog-fill" style="width:' + Math.round(doneCount/plans.length*100) + '%"></div></div>'
+    + '<div class="prog-label">~' + totalMin + ' min</div></div>';
+  html += '<div class="arabic-full-done"><button class="btn-done" onclick="markArabicAllDone()">'
+    + (allDone ? '✅ 全部完成' : '→ 今日全部完成，打卡阿语') + '</button></div>';
+  html += '<div class="arabic-phase-nav"><button onclick="switchPhase(0)">字母关</button><button onclick="switchPhase(1)">拼读关</button>'
+    + '<button onclick="switchPhase(2)">句法入门</button><button class="warn" onclick="resetArabic()">重置</button></div>';
+  document.getElementById('arabicPlan').innerHTML = html;
+  document.getElementById('arabicTimeEst').textContent = '约 ' + totalMin + ' 分钟';
+}
+function toggleArabicTask(id) {
+  if (!arabicTaskData[TODAY]) arabicTaskData[TODAY] = {};
+  arabicTaskData[TODAY][id] = !arabicTaskData[TODAY][id];
+  SS('arabic_task_data', arabicTaskData); renderArabicPlan();
+}
+function markArabicAllDone() {
+  const plans = generateDailyPlan();
+  if (!arabicTaskData[TODAY]) arabicTaskData[TODAY] = {};
+  const allDone = plans.every(p => arabicTaskData[TODAY][p.id]);
+  if (allDone) { plans.forEach(p => { delete arabicTaskData[TODAY][p.id]; });
+    if (habitData[TODAY]) delete habitData[TODAY]['arabic']; SS('arabic_task_data', arabicTaskData); SS('habit_data', habitData); renderAll(); toast('已取消'); return; }
+  plans.forEach(p => { arabicTaskData[TODAY][p.id] = true; });
+  if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['arabic'] = true;
+  const c = new Set(); Object.keys(arabicTaskData).forEach(d => { if (Object.keys(arabicTaskData[d]).length >= 3) c.add(d); });
+  arabicDay = Math.min(c.size + 1, 28); SS('arabic_day', arabicDay);
+  SS('arabic_task_data', arabicTaskData); SS('habit_data', habitData); renderAll(); toast('✅ 阿语打卡完成！');
+}
+function switchPhase(p) { arabicPhase = p; arabicDay = 1; SS('arabic_phase', p); SS('arabic_day', 1); renderAll(); }
+function resetArabic() { if (!confirm('确定重置阿语进度？')) return;
+  localStorage.removeItem('arabic_phase'); localStorage.removeItem('arabic_day'); localStorage.removeItem('arabic_task_data');
+  arabicPhase = 0; arabicDay = 1; arabicTaskData = {}; renderAll(); toast('已重置'); }
+
+// ========== READING ==========
+function renderReading() {
+  const today = readingData[TODAY] || {};
+  const history = Object.entries(readingData).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 5);
+  let html = '<input class="small-input" id="readingBook" placeholder="正在读的书" value="' + escAttr(today.book || '') + '">';
+  html += '<input class="small-input" id="readingPages" placeholder="今天读了 XX 页 / XX 分钟" value="' + escAttr(today.pages || '') + '">';
+  html += '<input class="small-input" id="readingNotes" placeholder="随便记点什么……" value="' + escAttr(today.notes || '') + '">';
+  html += '<div class="habit-done-btn"><button class="btn-done" onclick="saveReading()" style="margin-right:8px;">保存</button>'
+    + '<button class="btn-done btn-secondary" onclick="markReadingDone()">✅ 打卡阅读</button></div>';
+  if (history.length > 0) {
+    html += '<div class="reading-log" style="margin-top:10px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">📖 最近</div>';
+    history.forEach(([d, r]) => { if (!r.book && !r.pages) return;
+      html += '<div style="font-size:11px;color:#888;margin-bottom:2px;">' + d + ' · ' + escHtml(r.book||'') + ' · ' + escHtml(r.pages||'') + '</div>'; });
+    html += '</div>';
+  } document.getElementById('readingPanel').innerHTML = html;
+}
+function saveReading() {
+  if (!readingData[TODAY]) readingData[TODAY] = {};
+  readingData[TODAY].book = document.getElementById('readingBook').value.trim();
+  readingData[TODAY].pages = document.getElementById('readingPages').value.trim();
+  readingData[TODAY].notes = document.getElementById('readingNotes').value.trim();
+  SS('reading_data', readingData); renderReading(); toast('已保存 📝');
+}
+function markReadingDone() { saveReading(); if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['reading'] = true; SS('habit_data', habitData); renderAll(); toast('✅ 已打卡阅读！'); }
+
+// ========== SKINCARE (customizable routine + product tracking) ==========
+function renderSkincare() {
+  const done = skincareDone[TODAY] || {};
+  let html = '<div class="routine-list" id="routineList"></div>';
+
+  // Add new step
+  html += '<div class="routine-add-row"><input id="newStepName" placeholder="添加新的护肤步骤……">'
+    + '<button onclick="addSkincareStep()">+ 添加</button></div>';
+  html += '<div class="habit-done-btn"><button class="btn-done btn-secondary" onclick="markSkincareDone()">✅ 打卡护肤</button></div>';
+  html += '<div id="productLogArea"></div>';
+
+  document.getElementById('skincarePanel').innerHTML = html;
+
+  // Render each step
+  const list = document.getElementById('routineList');
+  skincareRoutine.forEach((step, i) => {
+    const checked = done[step.id] || false;
+    const div = document.createElement('div');
+    div.className = 'routine-item';
+    div.draggable = true;
+    div.dataset.index = i;
+    div.innerHTML =
+      '<span class="drag-handle" title="拖动排序">⠿</span>'
+      + '<div class="task-check' + (checked ? ' done' : '') + '" onclick="toggleSkincareStep(\'' + step.id + '\')">' + (checked ? '✓' : '') + '</div>'
+      + '<span class="routine-name" onclick="toggleProductDetail(\'' + step.id + '\')">' + escHtml(step.name)
+      + (step.product ? '<span class="routine-product"> · ' + escHtml(step.product) + (step.rating ? ' ' + '⭐'.repeat(step.rating) : '') + '</span>' : '')
+      + '</span>'
+      + '<span class="routine-x" onclick="deleteSkincareStep(' + i + ')">✕</span>'
+      // Product detail
+      + '<div class="product-detail" id="pd-' + step.id + '">'
+      + '<div class="pd-row"><input id="pd-product-' + step.id + '" placeholder="产品名称" value="' + escAttr(step.product||'') + '">'
+      + '<select id="pd-rating-' + step.id + '"><option value="0"' + (!step.rating?' selected':'') + '>评分</option>'
+      + [1,2,3,4,5].map(n => '<option value="'+n+'"' + (step.rating===n?' selected':'') + '>'+'⭐'.repeat(n)+'</option>').join('')
+      + '</select></div>'
+      + '<div class="pd-row"><input id="pd-note-' + step.id + '" placeholder="好不好用？随便写……" value="' + escAttr(step.productNote||'') + '">'
+      + '<button onclick="saveProduct(\'' + step.id + '\')" style="padding:4px 10px;border-radius:6px;border:none;background:#1a1a2e;color:#fff;font-size:11px;">保存</button></div>'
+      + '</div>';
+    // Drag events
+    div.addEventListener('dragstart', function(e) { e.dataTransfer.setData('text/plain', ''+i); this.classList.add('dragging'); });
+    div.addEventListener('dragend', function(e) { this.classList.remove('dragging'); document.querySelectorAll('.routine-item').forEach(d => d.classList.remove('drag-over')); });
+    div.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+    div.addEventListener('dragleave', function(e) { this.classList.remove('drag-over'); });
+    div.addEventListener('drop', function(e) {
+      e.preventDefault(); this.classList.remove('drag-over');
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+      const toIdx = i;
+      const item = skincareRoutine.splice(fromIdx, 1)[0];
+      skincareRoutine.splice(toIdx, 0, item);
+      SS('skincare_routine', skincareRoutine);
+      renderSkincare();
+    });
+    list.appendChild(div);
+  });
+  renderProductLog();
+}
+
+function toggleProductDetail(stepId) {
+  const pd = document.getElementById('pd-' + stepId);
+  if (pd) pd.classList.toggle('show');
+}
+
+function saveProduct(stepId) {
+  const step = skincareRoutine.find(s => s.id === stepId);
+  if (!step) return;
+  step.product = document.getElementById('pd-product-' + stepId).value.trim();
+  step.rating = parseInt(document.getElementById('pd-rating-' + stepId).value) || 0;
+  step.productNote = document.getElementById('pd-note-' + stepId).value.trim();
+  SS('skincare_routine', skincareRoutine);
+  renderSkincare();
+  toast('已保存 🧴');
+}
+
+function toggleSkincareStep(stepId) {
+  if (!skincareDone[TODAY]) skincareDone[TODAY] = {};
+  skincareDone[TODAY][stepId] = !skincareDone[TODAY][stepId];
+  SS('skincare_done', skincareDone);
+  renderSkincare();
+}
+
+function addSkincareStep() {
+  const input = document.getElementById('newStepName');
+  const name = input.value.trim();
+  if (!name) return;
+  skincareRoutine.push({ id: 's' + (nextId++), name, product: '', rating: 0, productNote: '' });
+  SS('skincare_routine', skincareRoutine); SS('skincare_next_id', nextId);
+  renderSkincare(); toast('已添加 ✓');
+}
+
+function deleteSkincareStep(i) {
+  skincareRoutine.splice(i, 1);
+  SS('skincare_routine', skincareRoutine);
+  renderSkincare();
+}
+
+function markSkincareDone() {
+  if (!habitData[TODAY]) habitData[TODAY] = {};
+  habitData[TODAY]['skincare'] = true;
+  if (!skincareDone[TODAY]) skincareDone[TODAY] = {};
+  skincareRoutine.forEach(s => { skincareDone[TODAY][s.id] = true; });
+  SS('skincare_done', skincareDone);
+  SS('habit_data', habitData);
+  renderAll(); toast('✅ 已打卡护肤！');
+}
+
+// ========== PRODUCT LOG ==========
+let productNextId = S('product_next_id', 1);
+let showProductForm = false;
+let productFilter = '';
+
+function renderProductLog() {
+  const allCategories = [...new Set(productLog.map(p => p.category || '未分类'))];
+  const filtered = productFilter ? productLog.filter(p => (p.category || '未分类') === productFilter) : productLog;
+
+  let html = '<div style="border-top:1px solid #f0f0f0;margin-top:16px;padding-top:14px;">';
+  html += '<div style="font-size:14px;font-weight:600;margin-bottom:10px;">🛍️ 产品记录 <span style="font-size:12px;color:#aaa;font-weight:400;">· 用过/买过的都记下来</span></div>';
+
+  // Category filter pills
+  if (allCategories.length > 1) {
+    html += '<div class="tag-filter">';
+    html += '<button class="tfilter' + (!productFilter ? ' active' : '') + '" onclick="setProductFilter(\'\')">全部 (' + productLog.length + ')</button>';
+    allCategories.forEach(c => {
+      const count = productLog.filter(p => (p.category||'未分类') === c).length;
+      html += '<button class="tfilter' + (productFilter === c ? ' active' : '') + '" onclick="setProductFilter(\'' + escAttr(c) + '\')">' + escHtml(c) + ' (' + count + ')</button>';
+    });
+    html += '</div>';
+  }
+
+  // Add button
+  html += '<button onclick="toggleProductForm()" style="width:100%;padding:10px;border-radius:10px;border:1px dashed #ccc;background:#fafbfc;font-size:13px;cursor:pointer;font-family:inherit;margin-bottom:10px;">'
+    + (showProductForm ? '收起 ✕' : '+ 记一个产品') + '</button>';
+
+  // Add form
+  if (showProductForm) {
+    html += '<div style="background:#fafbfc;border-radius:10px;padding:12px;margin-bottom:10px;">';
+    html += '<input class="product-input" id="newProductName" placeholder="产品全称（如 适乐肤修护保湿乳）">';
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<input class="product-input" id="newProductCategory" placeholder="类别（如 面霜 / 精华）" style="flex:1;">';
+    html += '<input class="product-input" id="newProductPrice" placeholder="价格" style="flex:1;" type="number">';
+    html += '</div>';
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<input class="product-input" id="newProductDate" placeholder="购买日期" style="flex:1;" type="date">';
+    html += '<select id="newProductRating" class="product-input" style="flex:1;">'
+      + '<option value="0">评分</option>' + [1,2,3,4,5].map(n => '<option value="'+n+'">'+'⭐'.repeat(n)+'</option>').join('') + '</select>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">';
+    html += '<label style="font-size:13px;cursor:pointer;"><input type="checkbox" id="newProductRepurchase"> 会回购</label>';
+    html += '</div>';
+    html += '<input class="product-input" id="newProductNotes" placeholder="使用感受 / 备注……">';
+    html += '<button onclick="addProduct()" style="width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a2e;color:#fff;font-size:14px;cursor:pointer;font-family:inherit;">保存产品</button>';
+    html += '</div>';
+  }
+
+  // Product list
+  if (filtered.length === 0) {
+    html += '<div class="empty">还没有记录产品</div>';
+  } else {
+    html += filtered.slice().reverse().map(p => {
+      const stars = p.rating ? '⭐'.repeat(p.rating) : '';
+      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:10px;margin-bottom:4px;background:#fafbfc;border-radius:8px;">'
+        + '<div style="flex:1;">'
+        + '<div style="font-size:14px;font-weight:500;">' + escHtml(p.name) + '</div>'
+        + '<div style="font-size:11px;color:#888;margin-top:2px;">'
+        + (p.category ? '<span style="background:#e8f0fe;color:#4a6fa5;padding:1px 6px;border-radius:4px;margin-right:4px;">' + escHtml(p.category) + '</span>' : '')
+        + (p.date || '') + (p.price ? ' · ¥' + p.price : '')
+        + (stars ? ' · ' + stars : '')
+        + (p.repurchase ? ' · ✅回购' : '')
+        + '</div>'
+        + (p.notes ? '<div style="font-size:12px;color:#666;margin-top:4px;">' + escHtml(p.notes) + '</div>' : '')
+        + '</div>'
+        + '<span style="color:#ccc;cursor:pointer;padding:2px;" onclick="deleteProduct(\'' + p.id + '\')">✕</span>'
+        + '</div>';
+    }).join('');
+  }
+
+  html += '</div>';
+  document.getElementById('productLogArea').innerHTML = html;
+}
+
+function toggleProductForm() { showProductForm = !showProductForm; renderProductLog(); }
+
+function addProduct() {
+  const name = document.getElementById('newProductName').value.trim();
+  if (!name) { toast('至少填个产品名吧'); return; }
+  productLog.push({
+    id: 'p' + (productNextId++),
+    name: name,
+    category: document.getElementById('newProductCategory').value.trim(),
+    price: document.getElementById('newProductPrice').value.trim(),
+    date: document.getElementById('newProductDate').value,
+    rating: parseInt(document.getElementById('newProductRating').value) || 0,
+    repurchase: document.getElementById('newProductRepurchase').checked,
+    notes: document.getElementById('newProductNotes').value.trim(),
+  });
+  SS('product_log', productLog); SS('product_next_id', productNextId);
+  showProductForm = false;
+  renderProductLog(); toast('产品已记录 🛍️');
+}
+
+function deleteProduct(id) {
+  productLog = productLog.filter(p => p.id !== id);
+  SS('product_log', productLog);
+  renderProductLog();
+}
+
+function setProductFilter(c) { productFilter = c; renderProductLog(); }
+
+// ========== SLEEP ==========
+function renderSleep() {
+  const today = sleepData[TODAY] || {};
+  let html = '<input class="small-input" id="sleepBedtime" placeholder="睡觉时间（如 23:30）" value="' + escAttr(today.bedtime || '') + '">';
+  html += '<input class="small-input" id="sleepNote" placeholder="睡眠质量 / 备注" value="' + escAttr(today.note || '') + '">';
+  html += '<div class="habit-done-btn"><button class="btn-done" onclick="saveSleep()" style="margin-right:8px;">保存</button>'
+    + '<button class="btn-done btn-secondary" onclick="markSleepDone()">✅ 打卡早睡</button></div>';
+  const history = Object.entries(sleepData).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 5);
+  if (history.length > 0) {
+    html += '<div class="reading-log" style="margin-top:10px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">💤 最近</div>';
+    history.forEach(([d, r]) => { html += '<div style="font-size:11px;color:#888;margin-bottom:2px;">' + d + ' · ' + escHtml(r.bedtime||'') + ' · ' + escHtml(r.note||'') + '</div>'; });
+    html += '</div>';
+  } document.getElementById('sleepPanel').innerHTML = html;
+}
+function saveSleep() {
+  if (!sleepData[TODAY]) sleepData[TODAY] = {};
+  sleepData[TODAY].bedtime = document.getElementById('sleepBedtime').value.trim();
+  sleepData[TODAY].note = document.getElementById('sleepNote').value.trim();
+  SS('sleep_data', sleepData); renderSleep(); toast('已保存 💤');
+}
+function markSleepDone() { saveSleep(); if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['sleep'] = true; SS('habit_data', habitData); renderAll(); toast('✅ 已打卡早睡！'); }
+
+// ========== CUSTOM ==========
+function renderCustom() {
+  const today = customData[TODAY] || [];
+  let html = '<div class="custom-task-row"><input id="customInput" placeholder="添加一个新任务……">'
+    + '<button onclick="addCustomTask()">+ 添加</button></div>';
+  if (today.length === 0) { html += '<div class="empty">今天还没有自定义任务</div>'; }
+  else {
+    html += today.map((t, i) => '<div class="custom-item" style="justify-content:space-between;">'
+      + '<div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleCustom(' + i + ')">'
+      + '<div class="task-check' + (t.done ? ' done' : '') + '">' + (t.done ? '✓' : '') + '</div>'
+      + '<span style="' + (t.done ? 'text-decoration:line-through;color:#aaa;' : '') + '">' + escHtml(t.text) + '</span></div>'
+      + '<span class="custom-x" onclick="deleteCustom(' + i + ')">✕</span></div>').join('');
+  }
+  document.getElementById('customPanel').innerHTML = html;
+}
+function addCustomTask() {
+  const text = document.getElementById('customInput').value.trim(); if (!text) return;
+  if (!customData[TODAY]) customData[TODAY] = [];
+  customData[TODAY].push({ text, done: false });
+  SS('custom_data', customData); renderCustom(); toast('已添加 ✓');
+}
+function toggleCustom(i) { customData[TODAY][i].done = !customData[TODAY][i].done; SS('custom_data', customData); renderCustom(); }
+function deleteCustom(i) { customData[TODAY].splice(i, 1); SS('custom_data', customData); renderCustom(); }
+
+// ========== NOTES ==========
+function saveNote() {
+  const body = document.getElementById('noteBody').value.trim(); if (!body) return;
+  notesData.push({ body, date: TODAY, tags: currentTags.slice() });
+  SS('notes_data', notesData); document.getElementById('noteBody').value = ''; currentTags = []; renderNotes(); toast('已保存 📝');
+}
+function addTag(tag) {
+  if (!currentTags.includes(tag)) currentTags.push(tag);
+  document.querySelectorAll('.btn-tag').forEach(b => { if (b.textContent === tag) { b.style.background = '#1a1a2e'; b.style.color = '#fff'; setTimeout(() => { b.style.background = ''; b.style.color = ''; }, 200); } });
+  toast('标签: ' + currentTags.join(', '));
+}
+function renderTagFilter() {
+  const tags = {}; notesData.forEach(n => { (n.tags||[]).forEach(t => { tags[t] = (tags[t]||0)+1; }); });
+  const e = Object.entries(tags).sort((a,b) => b[1]-a[1]);
+  if (e.length === 0) { document.getElementById('tagFilter').innerHTML = ''; return; }
+  let h = '<button class="tfilter' + (!currentFilter?' active':'') + '" onclick="setFilter(\'\')">全部</button>';
+  e.forEach(([t,c]) => { h += '<button class="tfilter' + (currentFilter===t?' active':'') + '" onclick="setFilter(\''+escAttr(t)+'\')">'+escHtml(t)+' ('+c+')</button>'; });
+  document.getElementById('tagFilter').innerHTML = h;
+}
+function setFilter(t) { currentFilter = t; SS('note_filter', currentFilter); renderNotes(); }
+function renderNotes() {
+  renderTagFilter();
+  let f = notesData.slice().reverse(); if (currentFilter) f = f.filter(n => (n.tags||[]).includes(currentFilter));
+  const l = document.getElementById('noteList');
+  if (f.length === 0) { l.innerHTML = '<div class="empty">' + (currentFilter?'这个标签下还没有笔记':'还没有笔记，写点什么吧') + '</div>'; return; }
+  l.innerHTML = f.map(n => { const i = notesData.indexOf(n);
+    return '<li class="note-item"><button class="note-delete" onclick="deleteNote('+i+')">✕</button>'
+      + '<div class="note-date">'+n.date+'</div><div class="note-body">'+escHtml(n.body)+'</div>'
+      + ((n.tags&&n.tags.length)?'<div class="note-tags">'+n.tags.map(t=>'<span class="note-tag">'+escHtml(t)+'</span>').join('')+'</div>':'')+'</li>';
+  }).join('');
+}
+function deleteNote(i) { notesData.splice(i, 1); SS('notes_data', notesData); renderNotes(); }
+
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s) { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+function toast(m) { const e = document.getElementById('toast'); e.innerHTML = m; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 1500); }
+
+renderAll();
+</script>
+</body>
+</html>
