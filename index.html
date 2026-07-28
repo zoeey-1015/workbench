@@ -6,162 +6,231 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="工作台">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%231a1a2e'/><text x='50' y='68' text-anchor='middle' fill='white' font-size='50' font-family='sans-serif'>台</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect rx='20' width='100' height='100' fill='%23e8739e'/><text x='50' y='68' text-anchor='middle' fill='white' font-size='50' font-family='sans-serif'>台</text></svg>">
 <title>我的工作台</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; background: #f5f5f7; color: #1a1a2e; -webkit-tap-highlight-color: transparent; padding-bottom: 24px; }
-.header { background: #1a1a2e; color: #fff; padding: 16px 20px; padding-top: max(16px, env(safe-area-inset-top)); position: sticky; top: 0; z-index: 10; }
-.header h1 { font-size: 20px; font-weight: 600; }
-.header .date { font-size: 13px; opacity: 0.7; margin-top: 2px; display: flex; gap: 16px; }
-.header .today-done { color: #34c759; }
-.container { max-width: 600px; margin: 0 auto; padding: 12px 16px; }
-.section { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-.section-title { font-size: 15px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
-.section-title .icon { font-size: 18px; }
-.section-title .arrow { font-size: 12px; color: #bbb; margin-left: auto; transition: transform 0.2s; }
-.section-title.open .arrow { transform: rotate(180deg); }
-.section-body.hidden { display: none; }
+body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; background: linear-gradient(180deg, #fef0f5, #fce4ec); color: #4a2535; -webkit-tap-highlight-color: transparent; height: 100vh; overflow: hidden; }
 
-.habits { display: flex; gap: 10px; flex-wrap: wrap; }
-.habit-card { flex: 1; min-width: 100px; background: #f8f9fa; border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; user-select: none; transition: all 0.15s; border: 2px solid transparent; }
+/* ===== LAYOUT ===== */
+.app { display: flex; height: 100vh; }
+.sidebar { width: 130px; min-width: 130px; background: linear-gradient(180deg, #fdf0f5, #fce4ec); display: flex; flex-direction: column; border-right: 1px solid #f0c0d0; overflow-y: auto; }
+.main { flex: 1; overflow-y: auto; padding: 16px; padding-bottom: 40px; }
+
+/* Sidebar header */
+.sidebar-header { padding: 16px 10px 10px; text-align: center; }
+.sidebar-header .title { font-size: 16px; font-weight: 700; color: #db4d8a; }
+.sidebar-header .date { font-size: 10px; color: #d4a0b5; margin-top: 2px; }
+
+/* Sidebar coin */
+.sidebar-coin { margin: 6px 10px; padding: 8px; background: #fff; border-radius: 10px; text-align: center; }
+.sidebar-coin .coin-val { font-size: 20px; font-weight: 700; color: #e8739e; }
+.sidebar-coin .coin-lbl { font-size: 10px; color: #b08896; }
+
+/* Sidebar nav */
+.sidebar-nav { flex: 1; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
+.nav-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 13px; color: #4a2535; transition: all 0.15s; border: none; background: transparent; font-family: inherit; text-align: left; width: 100%; }
+.nav-item:active { background: #fef0f5; }
+.nav-item.active { background: #fff; font-weight: 600; color: #db4d8a; box-shadow: 0 1px 3px rgba(219,77,138,0.1); }
+.nav-item .ni-icon { font-size: 18px; width: 22px; text-align: center; }
+.nav-item .ni-badge { font-size: 10px; background: #e8739e; color: #fff; padding: 1px 6px; border-radius: 8px; margin-left: auto; min-width: 18px; text-align: center; }
+
+/* Sidebar spend */
+.sidebar-spend { padding: 8px 10px; border-top: 1px solid #f0c0d0; }
+.sidebar-spend input { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #f0c0d0; font-size: 12px; font-family: inherit; margin-bottom: 4px; }
+.sidebar-spend select { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid #f0c0d0; font-size: 11px; margin-bottom: 4px; }
+.sidebar-spend button { width: 100%; padding: 6px; border-radius: 6px; border: none; background: #e8739e; color: #fff; font-size: 12px; cursor: pointer; font-family: inherit; margin-bottom: 4px; }
+
+/* ===== MAIN CONTENT ===== */
+.panel { display: none; }
+.panel.active { display: block; }
+
+.section-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #4a2535; }
+
+.habits { display: flex; gap: 8px; flex-wrap: wrap; }
+.habit-card { flex: 1; min-width: 90px; background: #fff; border-radius: 12px; padding: 14px; text-align: center; cursor: pointer; user-select: none; transition: all 0.15s; border: 2px solid transparent; }
 .habit-card:active { transform: scale(0.96); }
-.habit-card.done { border-color: #34c759; background: #f0fff4; }
-.habit-card .habit-icon { font-size: 28px; margin-bottom: 4px; }
-.habit-card .habit-name { font-size: 13px; font-weight: 500; }
+.habit-card.done { border-color: #e8739e; background: #fef0f5; }
+.habit-card .habit-icon { font-size: 26px; margin-bottom: 4px; }
+.habit-card .habit-name { font-size: 12px; font-weight: 500; }
 
 /* Arabic */
-.phase-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 10px; background: #e8f0fe; color: #4a6fa5; margin-bottom: 10px; }
-.arabic-task { display: flex; align-items: flex-start; gap: 10px; padding: 10px; margin-bottom: 6px; background: #fafbfc; border-radius: 10px; }
-.task-check { width: 22px; height: 22px; min-width: 22px; border-radius: 11px; border: 2px solid #ddd; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.15s; margin-top: 1px; }
-.task-check.done { background: #34c759; border-color: #34c759; color: #fff; }
+.phase-badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 10px; background: #fef0f5; color: #db4d8a; margin-bottom: 10px; }
+.arabic-task, .check-task { display: flex; align-items: flex-start; gap: 10px; padding: 10px; margin-bottom: 6px; background: #fff5f8; border-radius: 10px; }
+.task-check { width: 22px; height: 22px; min-width: 22px; border-radius: 11px; border: 2px solid #e8b0c5; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.15s; margin-top: 1px; }
+.task-check.done { background: #e8739e; border-color: #e8739e; color: #fff; }
 .task-info { flex: 1; }
 .task-info .task-desc { font-size: 14px; line-height: 1.4; }
-.task-info .task-time { font-size: 11px; color: #aaa; margin-top: 2px; }
+.task-info .task-time { font-size: 11px; color: #b08896; margin-top: 2px; }
 .task-info .task-detail { font-size: 12px; color: #888; margin-top: 4px; }
 .arabic-letters-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .arabic-progress { margin-top: 10px; display: flex; gap: 8px; align-items: center; }
-.arabic-progress .prog-label { font-size: 12px; color: #888; white-space: nowrap; }
-.arabic-progress .prog-bar { flex: 1; height: 6px; background: #e8e8ed; border-radius: 3px; overflow: hidden; }
-.arabic-progress .prog-fill { height: 100%; border-radius: 3px; background: #4a90d9; }
+.arabic-progress .prog-label { font-size: 12px; color: #b08896; white-space: nowrap; }
+.arabic-progress .prog-bar { flex: 1; height: 6px; background: #fce4ec; border-radius: 3px; overflow: hidden; }
+.arabic-progress .prog-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #e8739e, #db4d8a); }
 .arabic-full-done, .habit-done-btn { margin-top: 10px; text-align: center; }
 .arabic-full-done button, .habit-done-btn button { padding: 10px 24px; border-radius: 10px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
-.btn-done { background: #34c759; color: #fff; }
-.btn-done:active { opacity: 0.8; }
-.btn-secondary { background: #888; color: #fff; }
+.btn-done { background: linear-gradient(135deg, #e8739e, #db4d8a); color: #fff; }
+.btn-done:active { opacity: 0.85; }
+.btn-secondary { background: linear-gradient(135deg, #d4a0b5, #c088a0); color: #fff; }
 .arabic-phase-nav { display: flex; gap: 8px; margin-top: 12px; justify-content: center; }
-.arabic-phase-nav button { padding: 6px 16px; border-radius: 8px; border: 1px solid #ddd; background: #fff; font-size: 12px; cursor: pointer; font-family: inherit; }
+.arabic-phase-nav button { padding: 6px 16px; border-radius: 8px; border: 1px solid #f0c0d0; background: #fff; font-size: 12px; cursor: pointer; font-family: inherit; color: #4a2535; }
+.arabic-phase-nav button:active { background: #fef0f5; }
 .arabic-phase-nav button.warn { border-color: #ff9500; color: #ff9500; }
 
-/* Reading / Sleep */
-.small-input, .product-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; font-family: inherit; background: #f8f9fa; margin-bottom: 8px; }
-.reading-log { font-size: 12px; color: #888; margin-top: 4px; }
+/* Reading / Sleep / inputs */
+.small-input, .product-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #f0c0d0; font-size: 13px; font-family: inherit; background: #fff; margin-bottom: 8px; }
+.small-input:focus, .product-input:focus { outline: none; border-color: #e8739e; }
+.reading-log { font-size: 12px; color: #b08896; margin-top: 4px; }
 
-/* Routine (skincare-like) */
+/* Routine */
 .routine-list { margin-bottom: 8px; }
-.routine-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 4px; background: #fafbfc; border-radius: 8px; }
-.routine-item .drag-handle { color: #ccc; cursor: grab; font-size: 14px; padding: 2px; }
+.routine-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 4px; background: #fff5f8; border-radius: 8px; }
+.routine-item .drag-handle { color: #e8b0c5; cursor: grab; font-size: 14px; padding: 2px; }
 .routine-item .routine-name { flex: 1; font-size: 14px; cursor: pointer; }
-.routine-item .routine-product { font-size: 11px; color: #4a90d9; margin-left: 4px; }
-.routine-item .routine-x { color: #ccc; cursor: pointer; padding: 2px 6px; font-size: 16px; }
-.routine-item.dragging { opacity: 0.5; }
-.routine-item.drag-over { border-top: 2px solid #4a90d9; }
+.routine-item .routine-product { font-size: 11px; color: #e8739e; margin-left: 4px; }
+.routine-item .routine-x { color: #e8b0c5; cursor: pointer; padding: 2px 6px; font-size: 16px; }
 .routine-add-row { display: flex; gap: 8px; margin-bottom: 10px; }
-.routine-add-row input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; font-family: inherit; background: #f8f9fa; }
-.routine-add-row button { padding: 8px 14px; border-radius: 8px; border: none; background: #1a1a2e; color: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
+.routine-add-row input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #f0c0d0; font-size: 13px; font-family: inherit; background: #fff; }
+.routine-add-row button { padding: 8px 14px; border-radius: 8px; border: none; background: #e8739e; color: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
 
-/* Product detail popup */
-.product-detail { margin-top: 6px; padding: 8px 10px; background: #f0f4ff; border-radius: 8px; font-size: 12px; display: none; }
+.product-detail { margin-top: 6px; padding: 8px 10px; background: #fef0f5; border-radius: 8px; font-size: 12px; display: none; }
 .product-detail.show { display: block; }
 .product-detail .pd-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.product-detail .pd-row input { flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 12px; font-family: inherit; }
-.product-detail .pd-row select { padding: 6px 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 12px; }
-.rating-stars { display: flex; gap: 2px; cursor: pointer; }
-.rating-stars .star { font-size: 18px; color: #ddd; }
-.rating-stars .star.active { color: #ff9500; }
+.product-detail .pd-row input { flex: 1; padding: 6px 8px; border-radius: 6px; border: 1px solid #f0c0d0; font-size: 12px; font-family: inherit; }
+.product-detail .pd-row select { padding: 6px 8px; border-radius: 6px; border: 1px solid #f0c0d0; font-size: 12px; }
 
-/* Custom tasks */
+/* custom tasks */
 .custom-task-row { display: flex; gap: 8px; margin-bottom: 10px; }
-.custom-task-row input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #e0e0e0; font-size: 13px; font-family: inherit; background: #f8f9fa; }
-.custom-task-row button { padding: 8px 14px; border-radius: 8px; border: none; background: #1a1a2e; color: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
-.custom-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 4px; background: #fafbfc; border-radius: 8px; }
+.custom-task-row input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #f0c0d0; font-size: 13px; font-family: inherit; background: #fff; }
+.custom-task-row input:focus { outline: none; border-color: #e8739e; }
+.custom-task-row button { padding: 8px 14px; border-radius: 8px; border: none; background: #e8739e; color: #fff; font-size: 13px; cursor: pointer; font-family: inherit; }
+.custom-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 4px; background: #fff5f8; border-radius: 8px; }
 .custom-item .custom-text { flex: 1; font-size: 14px; }
-.custom-item .custom-x { color: #ccc; cursor: pointer; padding: 2px 6px; font-size: 16px; }
+.custom-item .custom-x { color: #e8b0c5; cursor: pointer; padding: 2px 6px; font-size: 16px; }
 
-/* Notes */
+/* notes */
 .note-input-area { margin-bottom: 12px; }
-.note-input-area textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #e0e0e0; font-size: 14px; font-family: inherit; background: #f8f9fa; min-height: 80px; resize: vertical; }
+.note-input-area textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #f0c0d0; font-size: 14px; font-family: inherit; background: #fff; min-height: 80px; resize: vertical; }
+.note-input-area textarea:focus { outline: none; border-color: #e8739e; }
 .note-input-area .note-actions { display: flex; gap: 8px; margin-top: 8px; }
 .note-input-area .note-actions button { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
-.btn-save { background: #1a1a2e; color: #fff; flex: 1; }
-.btn-save:active { opacity: 0.8; }
-.btn-tag { background: #f0f0f5; color: #666; font-size: 12px !important; padding: 8px 10px !important; border: 1px solid #e0e0e0 !important; }
-.btn-tag:active { background: #e0e0e5; }
+.btn-save { background: #e8739e; color: #fff; flex: 1; }
+.btn-save:active { opacity: 0.85; }
+.btn-tag { background: #fff5f8; color: #b08896; font-size: 12px !important; padding: 8px 10px !important; border: 1px solid #f0c0d0 !important; }
+.btn-tag:active { background: #fef0f5; }
 .note-list { list-style: none; }
-.note-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.note-item { padding: 12px 0; border-bottom: 1px solid #fce4ec; }
 .note-item:last-child { border-bottom: none; }
-.note-item .note-date { font-size: 11px; color: #aaa; margin-bottom: 4px; }
+.note-item .note-date { font-size: 11px; color: #d4a0b5; margin-bottom: 4px; }
 .note-item .note-body { font-size: 14px; white-space: pre-wrap; line-height: 1.5; }
 .note-item .note-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-.note-item .note-tag { font-size: 10px; background: #e8e8ed; color: #888; padding: 2px 8px; border-radius: 10px; }
-.note-delete { float: right; background: none; border: none; color: #ccc; font-size: 16px; cursor: pointer; padding: 0 4px; margin-top: -2px; }
+.note-item .note-tag { font-size: 10px; background: #fce4ec; color: #b08896; padding: 2px 8px; border-radius: 10px; }
+.note-delete { float: right; background: none; border: none; color: #e8b0c5; font-size: 16px; cursor: pointer; padding: 0 4px; margin-top: -2px; }
 .tag-filter { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
-.tag-filter .tfilter { font-size: 11px; padding: 4px 10px; border-radius: 12px; border: 1px solid #e0e0e0; background: #fff; cursor: pointer; font-family: inherit; }
-.tag-filter .tfilter.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+.tag-filter .tfilter { font-size: 11px; padding: 4px 10px; border-radius: 12px; border: 1px solid #f0c0d0; background: #fff; cursor: pointer; font-family: inherit; color: #4a2535; }
+.tag-filter .tfilter.active { background: #e8739e; color: #fff; border-color: #e8739e; }
 
-.toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
+/* coin history */
+.coin-mini-history { font-size: 10px; color: #b08896; padding: 8px 10px; border-top: 1px solid #f0c0d0; max-height: 80px; overflow-y: auto; }
+.coin-mini-history .ch-item { margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #e8739e, #db4d8a); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
 .toast.show { opacity: 1; }
-.empty { text-align: center; color: #bbb; padding: 16px; font-size: 13px; }
+.empty { text-align: center; color: #d4a0b5; padding: 16px; font-size: 13px; }
+
+@keyframes coinPop { 0% { transform: scale(1); } 50% { transform: scale(1.5); } 100% { transform: scale(1); } }
+.coin-pop { animation: coinPop 0.4s ease; }
+
+/* Responsive: mobile stacks, sidebar becomes top tab bar */
+@media (max-width: 600px) {
+  .app { flex-direction: column; }
+  .sidebar { width: 100%; min-width: 100%; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px; padding: 6px; border-right: none; border-bottom: 1px solid #f0c0d0; overflow-y: visible; }
+  .sidebar-header { padding: 0 4px; text-align: left; }
+  .sidebar-header .title { font-size: 14px; }
+  .sidebar-header .date { display: none; }
+  .sidebar-coin { margin: 0 4px; padding: 4px 8px; }
+  .sidebar-coin .coin-val { font-size: 16px; }
+  .sidebar-spend { display: none; }
+  .coin-mini-history { display: none; }
+  .sidebar-nav { flex-direction: row; gap: 2px; padding: 0; overflow-x: auto; }
+  .nav-item { font-size: 11px; padding: 6px 8px; white-space: nowrap; gap: 4px; border-radius: 8px; }
+  .nav-item .ni-icon { font-size: 14px; width: auto; }
+  .nav-item .ni-badge { display: none; }
+  .main { padding: 10px; height: 0; flex: 1; }
+  .habits { gap: 6px; }
+  .habit-card { min-width: 70px; padding: 10px 6px; }
+  .habit-card .habit-icon { font-size: 22px; }
+}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>我的工作台</h1>
-  <div class="date" id="todayDate"></div>
-</div>
-
-<div class="container">
-
-  <!-- Top cards -->
-  <div class="section">
-    <div class="habits" id="habitList"></div>
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="title">🌸 工作台</div>
+      <div class="date" id="todayDate"></div>
+    </div>
+    <div class="sidebar-coin">
+      <div class="coin-val" id="coinBalance">0</div>
+      <div class="coin-lbl">💰 金币</div>
+    </div>
+    <div class="sidebar-nav">
+      <button class="nav-item active" onclick="switchPanel('daily')"><span class="ni-icon">🏠</span> 今日<span class="ni-badge" id="dailyBadge"></span></button>
+      <button class="nav-item" onclick="switchPanel('arabic')"><span class="ni-icon">📖</span> 阿语</button>
+      <button class="nav-item" onclick="switchPanel('reading')"><span class="ni-icon">📚</span> 阅读</button>
+      <button class="nav-item" onclick="switchPanel('skincare')"><span class="ni-icon">🧴</span> 护肤</button>
+      <button class="nav-item" onclick="switchPanel('custom')"><span class="ni-icon">📋</span> 任务</button>
+      <button class="nav-item" onclick="switchPanel('notes')"><span class="ni-icon">💬</span> 笔记</button>
+    </div>
+    <div class="sidebar-spend">
+      <input type="number" id="spendAmount" placeholder="花了多少？" min="1">
+      <select id="spendCategory">
+        <option value="">分类</option><option value="衣服">衣服</option><option value="护肤">护肤</option>
+        <option value="吃喝">吃喝</option><option value="游戏">游戏</option><option value="其他">其他</option>
+      </select>
+      <button onclick="spendCoins()">💸 扣金币</button>
+    </div>
+    <div class="coin-mini-history" id="coinHistory"></div>
   </div>
 
-  <!-- ARABIC -->
-  <div class="section">
-    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">📖</span> 阿语学习 <span style="font-size:12px;color:#aaa;font-weight:400;margin-left:4px;" id="arabicTimeEst"></span><span class="arrow">▾</span></div>
-    <div class="section-body" id="arabicBody"><div id="arabicPlan"></div></div>
-  </div>
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <!-- DAILY -->
+    <div class="panel active" id="panel-daily">
+      <div class="section-title">今日打卡</div>
+      <div class="habits" id="habitList"></div>
+    </div>
 
-  <!-- READING -->
-  <div class="section">
-    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">📚</span> 阅读 <span class="arrow">▾</span></div>
-    <div class="section-body" id="readingBody"><div id="readingPanel"></div></div>
-  </div>
+    <!-- ARABIC -->
+    <div class="panel" id="panel-arabic">
+      <div class="section-title">阿语学习 <span style="font-size:12px;color:#d4a0b5;font-weight:400;" id="arabicTimeEst"></span></div>
+      <div id="arabicPlan"></div>
+    </div>
 
-  <!-- SKINCARE -->
-  <div class="section">
-    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">🧴</span> 护肤 <span class="arrow">▾</span></div>
-    <div class="section-body" id="skincareBody"><div id="skincarePanel"></div></div>
-  </div>
+    <!-- READING -->
+    <div class="panel" id="panel-reading">
+      <div class="section-title">阅读</div>
+      <div id="readingPanel"></div>
+    </div>
 
-  <!-- SLEEP -->
-  <div class="section">
-    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">💤</span> 早睡 <span class="arrow">▾</span></div>
-    <div class="section-body" id="sleepBody"><div id="sleepPanel"></div></div>
-  </div>
+    <!-- SKINCARE -->
+    <div class="panel" id="panel-skincare">
+      <div class="section-title">护肤</div>
+      <div id="skincarePanel"></div>
+    </div>
 
-  <!-- CUSTOM -->
-  <div class="section">
-    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">📋</span> 自定义任务 <span style="font-size:12px;color:#aaa;font-weight:400;margin-left:4px;">自由添加</span><span class="arrow">▾</span></div>
-    <div class="section-body" id="customBody"><div id="customPanel"></div></div>
-  </div>
+    <!-- CUSTOM -->
+    <div class="panel" id="panel-custom">
+      <div class="section-title">自定义任务 <span style="font-size:12px;color:#d4a0b5;font-weight:400;">填分钟，每25min = +10💰</span></div>
+      <div id="customPanel"></div>
+    </div>
 
-  <!-- NOTES -->
-  <div class="section">
-    <div class="section-title open" onclick="toggleSection(this)"><span class="icon">💬</span> 随手记 <span style="font-size:12px;color:#aaa;font-weight:400;margin-left:4px;">组会 / 想法 / 待办</span><span class="arrow">▾</span></div>
-    <div class="section-body" id="notesBody">
+    <!-- NOTES -->
+    <div class="panel" id="panel-notes">
+      <div class="section-title">随手记</div>
       <div class="note-input-area">
         <textarea id="noteBody" placeholder="写什么都行……"></textarea>
         <div class="note-actions">
@@ -184,6 +253,59 @@ const TODAY = new Date().toISOString().split('T')[0];
 function S(k, fb) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; } catch(e) { return fb; } }
 function SS(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 
+// ========== COIN SYSTEM ==========
+let coinBalance = S('coin_balance', 0);
+let coinHistory = S('coin_history', []);
+const COIN_RULES = { tomato_min: 25, tomato_coin: 10, skincare: 1, custom_min_rate: 10 }; // 10 coins per 25min tomato
+
+function earnCoins(amount, reason) {
+  coinBalance += amount;
+  coinHistory.push({ date: TODAY, amount: '+' + amount, reason: reason });
+  SS('coin_balance', coinBalance); SS('coin_history', coinHistory);
+  updateCoinUI();
+  toast('+' + amount + ' 💰 ' + reason);
+}
+function spendCoins() {
+  const amt = parseInt(document.getElementById('spendAmount').value);
+  const cat = document.getElementById('spendCategory').value || '消费';
+  if (!amt || amt <= 0) { toast('输入花了多少钱呀'); return; }
+  if (amt > coinBalance) { toast('金币不够！还差 ' + (amt - coinBalance) + ' 💰'); return; }
+  coinBalance -= amt;
+  coinHistory.push({ date: TODAY, amount: '-' + amt, reason: cat });
+  SS('coin_balance', coinBalance); SS('coin_history', coinHistory);
+  document.getElementById('spendAmount').value = '';
+  updateCoinUI();
+  toast('已扣除 ' + amt + ' 💰 · ' + cat);
+}
+function updateCoinUI() {
+  document.getElementById('coinBalance').textContent = coinBalance;
+  const hist = coinHistory.slice().reverse().slice(0, 8);
+  document.getElementById('coinHistory').innerHTML = hist.map(h =>
+    '<div class="ch-item"><span style="color:' + (h.amount.startsWith('+') ? '#e8739e' : '#888') + ';">' + h.amount + '</span> ' + escHtml(h.reason) + '</div>'
+  ).join('') || '<div style="font-size:10px;color:#d4a0b5;">打卡攒金币 💪</div>';
+  updateDoneBadge();
+}
+
+// ========== PANEL SWITCHING ==========
+let currentPanel = 'daily';
+function switchPanel(name) {
+  currentPanel = name;
+  document.querySelectorAll('.nav-item').forEach((el, i) => {
+    const panels = ['daily','arabic','reading','skincare','custom','notes'];
+    el.classList.toggle('active', panels[i] === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  // Re-render the active panel
+  if (name === 'daily') renderHabitCards();
+  if (name === 'arabic') renderArabicPlan();
+  if (name === 'reading') renderReading();
+  if (name === 'skincare') renderSkincare();
+  if (name === 'custom') renderCustom();
+  if (name === 'notes') renderNotes();
+}
+
+// ========== GLOBAL DATA ==========
 let habitData = S('habit_data', {});
 let arabicTaskData = S('arabic_task_data', {});
 let arabicPhase = S('arabic_phase', 0);
@@ -198,39 +320,26 @@ let skincareRoutine = S('skincare_routine', [
   { id:'s6', name:'防晒', product:'', rating:0, productNote:'' },
 ]);
 let skincareDone = S('skincare_done', {});
-let productLog = S('product_log', []); // [{id, name, category, date, price, rating, repurchase, notes}]
-let sleepData = S('sleep_data', {});
+let productLog = S('product_log', []);
 let customData = S('custom_data', {});
 let notesData = S('notes_data', []);
 let currentFilter = S('note_filter', '');
 let currentTags = [];
+let nextId = S('skincare_next_id', 7);
+let habitEarnedToday = S('habit_earned_today', {});
 
 const HABIT_DEFS = [
   { id: 'arabic', name: '阿语学习', icon: '📖' },
   { id: 'reading', name: '阅读 30min', icon: '📚' },
   { id: 'skincare', name: '护肤', icon: '🧴' },
-  { id: 'sleep', name: '早睡', icon: '💤' },
 ];
-let nextId = S('skincare_next_id', 7);
 
-function renderAll() {
-  renderHabitCards();
-  renderArabicPlan();
-  renderReading();
-  renderSkincare();
-  renderSleep();
-  renderCustom();
-  renderNotes();
-  document.getElementById('todayDate').innerHTML =
-    TODAY + ' ' + ['日','一','二','三','四','五','六'][new Date().getDay()]
-    + ' <span class="today-done" id="todayDoneBadge"></span>';
-  updateDoneBadge();
-}
 function updateDoneBadge() {
   const today = habitData[TODAY] || {};
   const done = HABIT_DEFS.filter(h => today[h.id]).length;
-  const badge = document.getElementById('todayDoneBadge');
-  if (badge) badge.textContent = done === 4 ? '🎉 全部完成' : done + '/4';
+  const badge = document.getElementById('dailyBadge');
+  if (badge) badge.textContent = done === 0 ? '' : done + '/3';
+  document.getElementById('todayDate').textContent = TODAY + ' ' + ['日','一','二','三','四','五','六'][new Date().getDay()];
 }
 function renderHabitCards() {
   const today = habitData[TODAY] || {};
@@ -241,14 +350,51 @@ function renderHabitCards() {
       + '<div class="habit-name">' + (done ? '✅ ' : '') + h.name + '</div></div>';
   }).join('');
 }
+let habitEarnedCoins = S('habit_earned_coins', {}); // { date: { id: coinsEarned } }
+
 function toggleHabit(id) {
   if (!habitData[TODAY]) habitData[TODAY] = {};
+  const wasDone = habitData[TODAY][id];
   habitData[TODAY][id] = !habitData[TODAY][id];
   SS('habit_data', habitData);
-  renderAll();
+  if (!wasDone && habitData[TODAY][id]) {
+    // Just toggled ON
+    if (!habitEarnedToday[TODAY]) habitEarnedToday[TODAY] = {};
+    if (!habitEarnedToday[TODAY][id]) {
+      let coins = 0;
+      if (id === 'reading') {
+        const mins = parseInt((readingData[TODAY] && readingData[TODAY].pages) || 30);
+        const toms = Math.floor(mins / COIN_RULES.tomato_min) || 1;
+        coins = toms * COIN_RULES.tomato_coin;
+      } else if (id === 'skincare') {
+        coins = COIN_RULES.skincare;
+      }
+      if (coins > 0) {
+        habitEarnedToday[TODAY][id] = true;
+        SS('habit_earned_today', habitEarnedToday);
+        if (!habitEarnedCoins[TODAY]) habitEarnedCoins[TODAY] = {};
+        habitEarnedCoins[TODAY][id] = coins;
+        SS('habit_earned_coins', habitEarnedCoins);
+        earnCoins(coins, id === 'reading' ? '阅读' : '护肤');
+      }
+    }
+  }
+  if (wasDone && !habitData[TODAY][id]) {
+    // Just toggled OFF – refund coins
+    if (habitEarnedToday[TODAY]) delete habitEarnedToday[TODAY][id];
+    const refund = (habitEarnedCoins[TODAY] && habitEarnedCoins[TODAY][id]) || 0;
+    if (refund > 0) {
+      coinBalance -= refund;
+      coinHistory.push({ date: TODAY, amount: '-' + refund, reason: '取消' + (id==='reading'?'阅读':'护肤') });
+      SS('coin_balance', coinBalance); SS('coin_history', coinHistory);
+      delete habitEarnedCoins[TODAY][id];
+      SS('habit_earned_coins', habitEarnedCoins);
+    }
+    SS('habit_earned_today', habitEarnedToday);
+  }
+  updateCoinUI(); renderHabitCards();
   toast(habitData[TODAY][id] ? '已打卡 🎉' : '已取消');
 }
-function toggleSection(el) { el.classList.toggle('open'); el.nextElementSibling.classList.toggle('hidden'); }
 
 // ========== ARABIC ==========
 const ALL_LETTERS = [
@@ -291,33 +437,30 @@ function generateDailyPlan() {
     if (subDay === 1) {
       const half = gLetters.slice(0, Math.ceil(gLetters.length/2));
       plans.push({id:'new_letters',title:'学习新字母',desc:half.map(l=>l.name).join(' + '),
-        detail:'<div class="arabic-letters-row">'+half.map(l=>l.iso).join(' ')+'</div>每个字母抄写四种形态各一行。跟着视频读出发音，录下来自己对比。',time:'30 min'});
+        detail:'<div class="arabic-letters-row">'+half.map(l=>l.iso).join(' ')+'</div>每个字母抄写四种形态各一行。',time:'30 min'});
     } else if (subDay === 2) {
       const half = gLetters.slice(Math.ceil(gLetters.length/2));
       plans.push({id:'new_letters',title:'学习新字母',desc:half.map(l=>l.name).join(' + '),
         detail:'<div class="arabic-letters-row">'+half.map(l=>l.iso).join(' ')+'</div>每个字母抄写四种形态各一行。注意区分 emphatic 和非 emphatic。',time:'30 min'});
     } else if (subDay === 3) {
-      plans.push({id:'review_group',title:'复习本组字母',desc:gLetters.map(l=>l.iso).join(' ')+' （'+gLetters.length+' 个）',
-        detail:'默写四种形态。不记得的翻回去看，红笔补上。',time:'25 min'});
-      plans.push({id:'pronounce',title:'发音精练',desc:'👄 录下自己朗读已学字母，对比标准发音',
-        detail:'YouTube: "Arabic Alphabet Pronunciation"。找出最不准的 3 个反复跟读。',time:'15 min'});
+      plans.push({id:'review_group',title:'复习本组字母',desc:gLetters.map(l=>l.iso).join(' ')+' （'+gLetters.length+' 个）',detail:'默写四种形态。不记得的翻回去看，红笔补上。',time:'25 min'});
+      plans.push({id:'pronounce',title:'发音精练',desc:'👄 录下自己朗读已学字母，对比标准发音',detail:'YouTube: "Arabic Alphabet Pronunciation"。',time:'15 min'});
     } else {
       plans.push({id:'dictation',title:'听写练习',desc:'👂 用已学字母听写简单单词',detail:'用 Duolingo 字母练习，或让视频读字母/短词，你写下来。',time:'20 min'});
-      if (prevLetters.length >= 4) plans.push({id:'copy_words',title:'临摹短词',desc:'抄写 5 个用已学字母组成的单词',
-        detail:'如: باب (bāb), كتاب (kitāb), قلم (qalam)。每个词抄 5 遍。',time:'20 min'});
+      if (prevLetters.length >= 4) plans.push({id:'copy_words',title:'临摹短词',desc:'抄写 5 个单词',detail:'如: باب (bāb), كتاب (kitāb), قلم (qalam)。每个词抄 5 遍。',time:'20 min'});
     }
-    plans.push({id:'listen',title:'听力浸泡',desc:'🎧 听 10 分钟阿拉伯语',detail:'闭眼听 Arabic alphabet song 或阿拉伯语播客。不看字幕，感受声音节奏。',time:'10 min'});
-    if (d%7===6||d%7===0) plans.push({id:'handwriting',title:'书法练习（周末）',desc:'✍️ 用阿语字母拼写你的中文名字',detail:'尝试把"朱彦澄"拼成阿语。不要求准确，目标是习惯用阿语字母思考。',time:'15 min'});
+    plans.push({id:'listen',title:'听力浸泡',desc:'🎧 听 10 分钟阿拉伯语',detail:'闭眼听 Arabic alphabet song。',time:'10 min'});
+    if (d%7===6||d%7===0) plans.push({id:'handwriting',title:'书法练习（周末）',desc:'✍️ 用阿语字母拼写你的中文名字',detail:'尝试把"朱彦澄"拼成阿语。',time:'15 min'});
   } else if (arabicPhase === 1) {
     plans.push({id:'daily_words',title:'每日生词',desc:'学习 8–10 个新单词，每个抄写 3 遍 + 标元音',detail:'从教材或常用 500 词表中选。不背拼写，先做到"看到能读"。',time:'30 min'});
-    plans.push({id:'flashcards',title:'闪卡复习',desc:'用 Quizlet/Anki 复习旧词',detail:'遮住阿语看中文 → 写阿语；遮住中文看阿语 → 读 + 翻译。每天至少过 20 个。',time:'20 min'});
-    plans.push({id:'dictation2',title:'听写单词',desc:'10 个学过的单词，听写下来',detail:'检查拼写和元音。错一个抄三遍。',time:'15 min'});
-    plans.push({id:'listen_phase1',title:'听力浸泡',desc:'🎧 阿拉伯语初学者对话视频',detail:'YouTube: "Arabic beginner conversation"。不看字幕 → 阿语字幕 → 中文翻译。',time:'15 min'});
+    plans.push({id:'flashcards',title:'闪卡复习',desc:'用 Quizlet/Anki 复习旧词',detail:'每天至少过 20 个。',time:'20 min'});
+    plans.push({id:'dictation2',title:'听写单词',desc:'10 个学过的单词，听写下来',detail:'错一个抄三遍。',time:'15 min'});
+    plans.push({id:'listen_phase1',title:'听力浸泡',desc:'🎧 阿拉伯语初学者对话视频',detail:'YouTube: "Arabic beginner conversation"。',time:'15 min'});
   } else if (arabicPhase === 2) {
-    plans.push({id:'daily_sentences',title:'每日短句',desc:'3–5 个短句，抄写 + 翻译 + 朗读',detail:'标出主语、谓语、宾语。关注名词句和动词句的结构。',time:'30 min'});
-    plans.push({id:'grammar',title:'语法点',desc:'每天一个基础语法点',detail:'如: 定冠词 الـ、阴阳性、名词句 vs 动词句、介词短语。',time:'20 min'});
-    plans.push({id:'back_translate',title:'回译练习',desc:'昨天的 3 个句子，看中文翻回阿语',detail:'不看原文，写完对照改错。红笔标出错处。',time:'15 min'});
-    plans.push({id:'read_aloud',title:'朗读录音',desc:'🎙️ 朗读本周所有句子并录音',detail:'回放对比标准发音。关注连读和停顿。',time:'10 min'});
+    plans.push({id:'daily_sentences',title:'每日短句',desc:'3–5 个短句，抄写 + 翻译 + 朗读',detail:'标出主语、谓语、宾语。',time:'30 min'});
+    plans.push({id:'grammar',title:'语法点',desc:'每天一个基础语法点',detail:'如: 定冠词 الـ、阴阳性、名词句 vs 动词句。',time:'20 min'});
+    plans.push({id:'back_translate',title:'回译练习',desc:'昨天的 3 个句子，看中文翻回阿语',detail:'不看原文，写完对照改错。',time:'15 min'});
+    plans.push({id:'read_aloud',title:'朗读录音',desc:'🎙️ 朗读本周所有句子并录音',detail:'回放对比标准发音。',time:'10 min'});
   }
   return plans;
 }
@@ -336,11 +479,13 @@ function renderArabicPlan() {
     const m = p.time.match(/(\d+)/); if (m) totalMin += parseInt(m[1]);
   });
   const doneCount = plans.filter(p => todayTasks[p.id]).length;
+  const tomatoes = Math.floor(totalMin / COIN_RULES.tomato_min);
+  const estCoins = tomatoes * COIN_RULES.tomato_coin;
   html += '<div class="arabic-progress"><div class="prog-label">' + doneCount + '/' + plans.length + ' 项</div>'
     + '<div class="prog-bar"><div class="prog-fill" style="width:' + Math.round(doneCount/plans.length*100) + '%"></div></div>'
-    + '<div class="prog-label">~' + totalMin + ' min</div></div>';
+    + '<div class="prog-label">~' + totalMin + 'min = ' + tomatoes + '🍅</div></div>';
   html += '<div class="arabic-full-done"><button class="btn-done" onclick="markArabicAllDone()">'
-    + (allDone ? '✅ 全部完成' : '→ 今日全部完成，打卡阿语') + '</button></div>';
+    + (allDone ? '✅ 全部完成' : '→ 今日全部完成，打卡阿语 +' + estCoins + '💰') + '</button></div>';
   html += '<div class="arabic-phase-nav"><button onclick="switchPhase(0)">字母关</button><button onclick="switchPhase(1)">拼读关</button>'
     + '<button onclick="switchPhase(2)">句法入门</button><button class="warn" onclick="resetArabic()">重置</button></div>';
   document.getElementById('arabicPlan').innerHTML = html;
@@ -355,32 +500,72 @@ function markArabicAllDone() {
   const plans = generateDailyPlan();
   if (!arabicTaskData[TODAY]) arabicTaskData[TODAY] = {};
   const allDone = plans.every(p => arabicTaskData[TODAY][p.id]);
-  if (allDone) { plans.forEach(p => { delete arabicTaskData[TODAY][p.id]; });
-    if (habitData[TODAY]) delete habitData[TODAY]['arabic']; SS('arabic_task_data', arabicTaskData); SS('habit_data', habitData); renderAll(); toast('已取消'); return; }
+  if (allDone) {
+    // UNCHECK: refund coins
+    plans.forEach(p => { delete arabicTaskData[TODAY][p.id]; });
+    if (habitData[TODAY]) delete habitData[TODAY]['arabic'];
+    SS('arabic_task_data', arabicTaskData); SS('habit_data', habitData);
+    if (habitEarnedToday[TODAY]) delete habitEarnedToday[TODAY]['arabic_all'];
+    const refund = (habitEarnedCoins[TODAY] && habitEarnedCoins[TODAY]['arabic']) || 0;
+    if (refund > 0) {
+      coinBalance -= refund;
+      coinHistory.push({ date: TODAY, amount: '-' + refund, reason: '取消阿语' });
+      SS('coin_balance', coinBalance); SS('coin_history', coinHistory);
+      delete habitEarnedCoins[TODAY]['arabic'];
+      SS('habit_earned_coins', habitEarnedCoins);
+    }
+    updateCoinUI();
+    if (currentPanel==='arabic') renderArabicPlan(); else if (currentPanel==='daily') renderHabitCards();
+    toast('已取消'); return;
+  }
   plans.forEach(p => { arabicTaskData[TODAY][p.id] = true; });
   if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['arabic'] = true;
+
+  // Calculate coins from total time
+  let totalMin = 0;
+  plans.forEach(p => { const m = p.time.match(/(\d+)/); if (m) totalMin += parseInt(m[1]); });
+  const tomatoes = Math.floor(totalMin / COIN_RULES.tomato_min);
+  const earned = tomatoes * COIN_RULES.tomato_coin;
+
+  if (!habitEarnedToday[TODAY]) habitEarnedToday[TODAY] = {};
+  if (!habitEarnedToday[TODAY]['arabic_all']) {
+    habitEarnedToday[TODAY]['arabic_all'] = true;
+    SS('habit_earned_today', habitEarnedToday);
+    if (earned > 0) {
+      if (!habitEarnedCoins[TODAY]) habitEarnedCoins[TODAY] = {};
+      habitEarnedCoins[TODAY]['arabic'] = earned;
+      SS('habit_earned_coins', habitEarnedCoins);
+      earnCoins(earned, '阿语 ' + totalMin + 'min = ' + tomatoes + '🍅');
+    }
+  }
+
   const c = new Set(); Object.keys(arabicTaskData).forEach(d => { if (Object.keys(arabicTaskData[d]).length >= 3) c.add(d); });
   arabicDay = Math.min(c.size + 1, 28); SS('arabic_day', arabicDay);
-  SS('arabic_task_data', arabicTaskData); SS('habit_data', habitData); renderAll(); toast('✅ 阿语打卡完成！');
+  SS('arabic_task_data', arabicTaskData); SS('habit_data', habitData);
+  updateCoinUI(); renderArabicPlan(); toast('✅ 阿语打卡完成！');
 }
-function switchPhase(p) { arabicPhase = p; arabicDay = 1; SS('arabic_phase', p); SS('arabic_day', 1); renderAll(); }
+function switchPhase(p) { arabicPhase = p; arabicDay = 1; SS('arabic_phase', p); SS('arabic_day', 1); renderArabicPlan(); }
 function resetArabic() { if (!confirm('确定重置阿语进度？')) return;
   localStorage.removeItem('arabic_phase'); localStorage.removeItem('arabic_day'); localStorage.removeItem('arabic_task_data');
-  arabicPhase = 0; arabicDay = 1; arabicTaskData = {}; renderAll(); toast('已重置'); }
+  arabicPhase = 0; arabicDay = 1; arabicTaskData = {}; renderArabicPlan(); toast('已重置'); }
 
 // ========== READING ==========
 function renderReading() {
   const today = readingData[TODAY] || {};
   const history = Object.entries(readingData).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 5);
+  const mins = parseInt(today.pages) || 0;
+  const tomatoes = Math.floor(mins / COIN_RULES.tomato_min);
+  const estCoins = tomatoes * COIN_RULES.tomato_coin;
   let html = '<input class="small-input" id="readingBook" placeholder="正在读的书" value="' + escAttr(today.book || '') + '">';
-  html += '<input class="small-input" id="readingPages" placeholder="今天读了 XX 页 / XX 分钟" value="' + escAttr(today.pages || '') + '">';
+  html += '<input class="small-input" id="readingPages" placeholder="今天读了 XX 分钟" type="number" min="1" step="5" value="' + escAttr(today.pages || '') + '">';
   html += '<input class="small-input" id="readingNotes" placeholder="随便记点什么……" value="' + escAttr(today.notes || '') + '">';
+  html += '<div style="font-size:11px;color:#b08896;margin-bottom:8px;">输入分钟，每' + COIN_RULES.tomato_min + 'min = 1🍅 = ' + COIN_RULES.tomato_coin + '💰' + (mins > 0 ? ' · 预计 ' + tomatoes + '🍅 +' + estCoins + '💰' : '') + '</div>';
   html += '<div class="habit-done-btn"><button class="btn-done" onclick="saveReading()" style="margin-right:8px;">保存</button>'
-    + '<button class="btn-done btn-secondary" onclick="markReadingDone()">✅ 打卡阅读</button></div>';
+    + '<button class="btn-done btn-secondary" onclick="markReadingDone()">✅ 打卡阅读 +' + (estCoins || 10) + '💰</button></div>';
   if (history.length > 0) {
-    html += '<div class="reading-log" style="margin-top:10px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">📖 最近</div>';
+    html += '<div class="reading-log" style="margin-top:10px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;color:#4a2535;">📖 最近</div>';
     history.forEach(([d, r]) => { if (!r.book && !r.pages) return;
-      html += '<div style="font-size:11px;color:#888;margin-bottom:2px;">' + d + ' · ' + escHtml(r.book||'') + ' · ' + escHtml(r.pages||'') + '</div>'; });
+      html += '<div style="font-size:11px;margin-bottom:2px;">' + d + ' · ' + escHtml(r.book||'') + ' · ' + escHtml(r.pages||'') + 'min</div>'; });
     html += '</div>';
   } document.getElementById('readingPanel').innerHTML = html;
 }
@@ -391,22 +576,25 @@ function saveReading() {
   readingData[TODAY].notes = document.getElementById('readingNotes').value.trim();
   SS('reading_data', readingData); renderReading(); toast('已保存 📝');
 }
-function markReadingDone() { saveReading(); if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['reading'] = true; SS('habit_data', habitData); renderAll(); toast('✅ 已打卡阅读！'); }
+function markReadingDone() { saveReading(); if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['reading'] = true; SS('habit_data', habitData);
+  // Recalc reading coins based on actual minutes
+  const mins = parseInt((readingData[TODAY] && readingData[TODAY].pages) || 30);
+  const tomatoes = Math.floor(mins / COIN_RULES.tomato_min);
+  const coins = tomatoes * COIN_RULES.tomato_coin || 10;
+  if (!habitEarnedCoins[TODAY]) habitEarnedCoins[TODAY] = {};
+  habitEarnedCoins[TODAY]['reading'] = coins;
+  SS('habit_earned_coins', habitEarnedCoins);
+  updateCoinUI(); renderReading(); toast('✅ 已打卡阅读！'); }
 
-// ========== SKINCARE (customizable routine + product tracking) ==========
+// ========== SKINCARE ==========
 function renderSkincare() {
   const done = skincareDone[TODAY] || {};
   let html = '<div class="routine-list" id="routineList"></div>';
-
-  // Add new step
   html += '<div class="routine-add-row"><input id="newStepName" placeholder="添加新的护肤步骤……">'
     + '<button onclick="addSkincareStep()">+ 添加</button></div>';
-  html += '<div class="habit-done-btn"><button class="btn-done btn-secondary" onclick="markSkincareDone()">✅ 打卡护肤</button></div>';
+  html += '<div class="habit-done-btn"><button class="btn-done btn-secondary" onclick="markSkincareDone()">✅ 打卡护肤 +1💰</button></div>';
   html += '<div id="productLogArea"></div>';
-
   document.getElementById('skincarePanel').innerHTML = html;
-
-  // Render each step
   const list = document.getElementById('routineList');
   skincareRoutine.forEach((step, i) => {
     const checked = done[step.id] || false;
@@ -421,268 +609,130 @@ function renderSkincare() {
       + (step.product ? '<span class="routine-product"> · ' + escHtml(step.product) + (step.rating ? ' ' + '⭐'.repeat(step.rating) : '') + '</span>' : '')
       + '</span>'
       + '<span class="routine-x" onclick="deleteSkincareStep(' + i + ')">✕</span>'
-      // Product detail
       + '<div class="product-detail" id="pd-' + step.id + '">'
       + '<div class="pd-row"><input id="pd-product-' + step.id + '" placeholder="产品名称" value="' + escAttr(step.product||'') + '">'
       + '<select id="pd-rating-' + step.id + '"><option value="0"' + (!step.rating?' selected':'') + '>评分</option>'
       + [1,2,3,4,5].map(n => '<option value="'+n+'"' + (step.rating===n?' selected':'') + '>'+'⭐'.repeat(n)+'</option>').join('')
       + '</select></div>'
-      + '<div class="pd-row"><input id="pd-note-' + step.id + '" placeholder="好不好用？随便写……" value="' + escAttr(step.productNote||'') + '">'
-      + '<button onclick="saveProduct(\'' + step.id + '\')" style="padding:4px 10px;border-radius:6px;border:none;background:#1a1a2e;color:#fff;font-size:11px;">保存</button></div>'
+      + '<div class="pd-row"><input id="pd-note-' + step.id + '" placeholder="好不好用？" value="' + escAttr(step.productNote||'') + '">'
+      + '<button onclick="saveProduct(\'' + step.id + '\')" style="padding:4px 10px;border-radius:6px;border:none;background:#e8739e;color:#fff;font-size:11px;">保存</button></div>'
       + '</div>';
-    // Drag events
     div.addEventListener('dragstart', function(e) { e.dataTransfer.setData('text/plain', ''+i); this.classList.add('dragging'); });
     div.addEventListener('dragend', function(e) { this.classList.remove('dragging'); document.querySelectorAll('.routine-item').forEach(d => d.classList.remove('drag-over')); });
     div.addEventListener('dragover', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
     div.addEventListener('dragleave', function(e) { this.classList.remove('drag-over'); });
     div.addEventListener('drop', function(e) {
       e.preventDefault(); this.classList.remove('drag-over');
-      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
-      const toIdx = i;
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain')), toIdx = i;
       const item = skincareRoutine.splice(fromIdx, 1)[0];
       skincareRoutine.splice(toIdx, 0, item);
-      SS('skincare_routine', skincareRoutine);
-      renderSkincare();
+      SS('skincare_routine', skincareRoutine); renderSkincare();
     });
     list.appendChild(div);
   });
   renderProductLog();
 }
-
-function toggleProductDetail(stepId) {
-  const pd = document.getElementById('pd-' + stepId);
-  if (pd) pd.classList.toggle('show');
-}
-
+function toggleProductDetail(stepId) { const pd = document.getElementById('pd-' + stepId); if (pd) pd.classList.toggle('show'); }
 function saveProduct(stepId) {
-  const step = skincareRoutine.find(s => s.id === stepId);
-  if (!step) return;
+  const step = skincareRoutine.find(s => s.id === stepId); if (!step) return;
   step.product = document.getElementById('pd-product-' + stepId).value.trim();
   step.rating = parseInt(document.getElementById('pd-rating-' + stepId).value) || 0;
   step.productNote = document.getElementById('pd-note-' + stepId).value.trim();
-  SS('skincare_routine', skincareRoutine);
-  renderSkincare();
-  toast('已保存 🧴');
+  SS('skincare_routine', skincareRoutine); renderSkincare(); toast('已保存 🧴');
 }
-
 function toggleSkincareStep(stepId) {
   if (!skincareDone[TODAY]) skincareDone[TODAY] = {};
   skincareDone[TODAY][stepId] = !skincareDone[TODAY][stepId];
-  SS('skincare_done', skincareDone);
-  renderSkincare();
+  SS('skincare_done', skincareDone); renderSkincare();
 }
-
 function addSkincareStep() {
-  const input = document.getElementById('newStepName');
-  const name = input.value.trim();
-  if (!name) return;
+  const input = document.getElementById('newStepName'); const name = input.value.trim(); if (!name) return;
   skincareRoutine.push({ id: 's' + (nextId++), name, product: '', rating: 0, productNote: '' });
   SS('skincare_routine', skincareRoutine); SS('skincare_next_id', nextId);
   renderSkincare(); toast('已添加 ✓');
 }
-
-function deleteSkincareStep(i) {
-  skincareRoutine.splice(i, 1);
-  SS('skincare_routine', skincareRoutine);
-  renderSkincare();
-}
-
+function deleteSkincareStep(i) { skincareRoutine.splice(i, 1); SS('skincare_routine', skincareRoutine); renderSkincare(); }
 function markSkincareDone() {
-  if (!habitData[TODAY]) habitData[TODAY] = {};
-  habitData[TODAY]['skincare'] = true;
+  if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['skincare'] = true;
   if (!skincareDone[TODAY]) skincareDone[TODAY] = {};
   skincareRoutine.forEach(s => { skincareDone[TODAY][s.id] = true; });
-  SS('skincare_done', skincareDone);
-  SS('habit_data', habitData);
-  renderAll(); toast('✅ 已打卡护肤！');
+  SS('skincare_done', skincareDone); SS('habit_data', habitData); updateCoinUI(); renderSkincare(); toast('✅ 已打卡护肤 +1💰！');
 }
 
 // ========== PRODUCT LOG ==========
-let productNextId = S('product_next_id', 1);
-let showProductForm = false;
-let productFilter = '';
-
+let productNextId = S('product_next_id', 1), showProductForm = false, productFilter = '';
 function renderProductLog() {
   const allCategories = [...new Set(productLog.map(p => p.category || '未分类'))];
   const filtered = productFilter ? productLog.filter(p => (p.category || '未分类') === productFilter) : productLog;
-
-  let html = '<div style="border-top:1px solid #f0f0f0;margin-top:16px;padding-top:14px;">';
-  html += '<div style="font-size:14px;font-weight:600;margin-bottom:10px;">🛍️ 产品记录 <span style="font-size:12px;color:#aaa;font-weight:400;">· 用过/买过的都记下来</span></div>';
-
-  // Category filter pills
+  let html = '<div style="border-top:1px solid #fce4ec;margin-top:16px;padding-top:14px;">';
+  html += '<div style="font-size:14px;font-weight:600;margin-bottom:10px;color:#4a2535;">🛍️ 产品记录</div>';
   if (allCategories.length > 1) {
     html += '<div class="tag-filter">';
     html += '<button class="tfilter' + (!productFilter ? ' active' : '') + '" onclick="setProductFilter(\'\')">全部 (' + productLog.length + ')</button>';
     allCategories.forEach(c => {
       const count = productLog.filter(p => (p.category||'未分类') === c).length;
       html += '<button class="tfilter' + (productFilter === c ? ' active' : '') + '" onclick="setProductFilter(\'' + escAttr(c) + '\')">' + escHtml(c) + ' (' + count + ')</button>';
-    });
-    html += '</div>';
+    }); html += '</div>';
   }
-
-  // Add button
-  html += '<button onclick="toggleProductForm()" style="width:100%;padding:10px;border-radius:10px;border:1px dashed #ccc;background:#fafbfc;font-size:13px;cursor:pointer;font-family:inherit;margin-bottom:10px;">'
-    + (showProductForm ? '收起 ✕' : '+ 记一个产品') + '</button>';
-
-  // Add form
+  html += '<button onclick="toggleProductForm()" style="width:100%;padding:10px;border-radius:10px;border:1px dashed #f0c0d0;background:#fff5f8;font-size:13px;cursor:pointer;font-family:inherit;margin-bottom:10px;color:#b08896;">' + (showProductForm ? '收起 ✕' : '+ 记一个产品') + '</button>';
   if (showProductForm) {
-    html += '<div style="background:#fafbfc;border-radius:10px;padding:12px;margin-bottom:10px;">';
-    html += '<input class="product-input" id="newProductName" placeholder="产品全称（如 适乐肤修护保湿乳）">';
-    html += '<div style="display:flex;gap:8px;">';
-    html += '<input class="product-input" id="newProductCategory" placeholder="类别（如 面霜 / 精华）" style="flex:1;">';
-    html += '<input class="product-input" id="newProductPrice" placeholder="价格" style="flex:1;" type="number">';
-    html += '</div>';
-    html += '<div style="display:flex;gap:8px;">';
-    html += '<input class="product-input" id="newProductDate" placeholder="购买日期" style="flex:1;" type="date">';
-    html += '<select id="newProductRating" class="product-input" style="flex:1;">'
-      + '<option value="0">评分</option>' + [1,2,3,4,5].map(n => '<option value="'+n+'">'+'⭐'.repeat(n)+'</option>').join('') + '</select>';
-    html += '</div>';
-    html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">';
-    html += '<label style="font-size:13px;cursor:pointer;"><input type="checkbox" id="newProductRepurchase"> 会回购</label>';
-    html += '</div>';
+    html += '<div style="background:#fff5f8;border-radius:10px;padding:12px;margin-bottom:10px;">';
+    html += '<input class="product-input" id="newProductName" placeholder="产品全称">';
+    html += '<div style="display:flex;gap:8px;"><input class="product-input" id="newProductCategory" placeholder="类别" style="flex:1;"><input class="product-input" id="newProductPrice" placeholder="价格" style="flex:1;" type="number"></div>';
+    html += '<div style="display:flex;gap:8px;"><input class="product-input" id="newProductDate" placeholder="购买日期" style="flex:1;" type="date"><select id="newProductRating" class="product-input" style="flex:1;"><option value="0">评分</option>' + [1,2,3,4,5].map(n => '<option value="'+n+'">'+'⭐'.repeat(n)+'</option>').join('') + '</select></div>';
+    html += '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;"><label style="font-size:13px;cursor:pointer;"><input type="checkbox" id="newProductRepurchase"> 会回购</label></div>';
     html += '<input class="product-input" id="newProductNotes" placeholder="使用感受 / 备注……">';
-    html += '<button onclick="addProduct()" style="width:100%;padding:10px;border-radius:8px;border:none;background:#1a1a2e;color:#fff;font-size:14px;cursor:pointer;font-family:inherit;">保存产品</button>';
-    html += '</div>';
+    html += '<button onclick="addProduct()" style="width:100%;padding:10px;border-radius:8px;border:none;background:#e8739e;color:#fff;font-size:14px;cursor:pointer;font-family:inherit;">保存产品</button></div>';
   }
-
-  // Product list
-  if (filtered.length === 0) {
-    html += '<div class="empty">还没有记录产品</div>';
-  } else {
+  if (filtered.length === 0) { html += '<div class="empty">还没有记录产品</div>'; }
+  else {
     html += filtered.slice().reverse().map(p => {
       const stars = p.rating ? '⭐'.repeat(p.rating) : '';
-      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:10px;margin-bottom:4px;background:#fafbfc;border-radius:8px;">'
-        + '<div style="flex:1;">'
-        + '<div style="font-size:14px;font-weight:500;">' + escHtml(p.name) + '</div>'
-        + '<div style="font-size:11px;color:#888;margin-top:2px;">'
-        + (p.category ? '<span style="background:#e8f0fe;color:#4a6fa5;padding:1px 6px;border-radius:4px;margin-right:4px;">' + escHtml(p.category) + '</span>' : '')
-        + (p.date || '') + (p.price ? ' · ¥' + p.price : '')
-        + (stars ? ' · ' + stars : '')
-        + (p.repurchase ? ' · ✅回购' : '')
-        + '</div>'
-        + (p.notes ? '<div style="font-size:12px;color:#666;margin-top:4px;">' + escHtml(p.notes) + '</div>' : '')
-        + '</div>'
-        + '<span style="color:#ccc;cursor:pointer;padding:2px;" onclick="deleteProduct(\'' + p.id + '\')">✕</span>'
-        + '</div>';
+      return '<div style="display:flex;align-items:flex-start;gap:8px;padding:10px;margin-bottom:4px;background:#fff5f8;border-radius:8px;">'
+        + '<div style="flex:1;"><div style="font-size:14px;font-weight:500;">' + escHtml(p.name) + '</div>'
+        + '<div style="font-size:11px;color:#b08896;margin-top:2px;">' + (p.category ? '<span style="background:#fce4ec;color:#db4d8a;padding:1px 6px;border-radius:4px;margin-right:4px;">' + escHtml(p.category) + '</span>' : '')
+        + (p.date||'') + (p.price?' · ¥'+p.price:'') + (stars?' · '+stars:'') + (p.repurchase?' · ✅回购':'') + '</div>'
+        + (p.notes?'<div style="font-size:12px;color:#888;margin-top:4px;">'+escHtml(p.notes)+'</div>':'') + '</div>'
+        + '<span style="color:#e8b0c5;cursor:pointer;padding:2px;" onclick="deleteProduct(\''+p.id+'\')">✕</span></div>';
     }).join('');
-  }
-
-  html += '</div>';
-  document.getElementById('productLogArea').innerHTML = html;
+  } html += '</div>'; document.getElementById('productLogArea').innerHTML = html;
 }
-
 function toggleProductForm() { showProductForm = !showProductForm; renderProductLog(); }
-
 function addProduct() {
-  const name = document.getElementById('newProductName').value.trim();
-  if (!name) { toast('至少填个产品名吧'); return; }
-  productLog.push({
-    id: 'p' + (productNextId++),
-    name: name,
-    category: document.getElementById('newProductCategory').value.trim(),
-    price: document.getElementById('newProductPrice').value.trim(),
-    date: document.getElementById('newProductDate').value,
-    rating: parseInt(document.getElementById('newProductRating').value) || 0,
-    repurchase: document.getElementById('newProductRepurchase').checked,
-    notes: document.getElementById('newProductNotes').value.trim(),
-  });
-  SS('product_log', productLog); SS('product_next_id', productNextId);
-  showProductForm = false;
-  renderProductLog(); toast('产品已记录 🛍️');
+  const name = document.getElementById('newProductName').value.trim(); if (!name) { toast('至少填个产品名吧'); return; }
+  productLog.push({ id: 'p'+(productNextId++), name, category: document.getElementById('newProductCategory').value.trim(), price: document.getElementById('newProductPrice').value.trim(), date: document.getElementById('newProductDate').value, rating: parseInt(document.getElementById('newProductRating').value)||0, repurchase: document.getElementById('newProductRepurchase').checked, notes: document.getElementById('newProductNotes').value.trim() });
+  SS('product_log', productLog); SS('product_next_id', productNextId); showProductForm = false; renderProductLog(); toast('产品已记录 🛍️');
 }
-
-function deleteProduct(id) {
-  productLog = productLog.filter(p => p.id !== id);
-  SS('product_log', productLog);
-  renderProductLog();
-}
-
+function deleteProduct(id) { productLog = productLog.filter(p => p.id !== id); SS('product_log', productLog); renderProductLog(); }
 function setProductFilter(c) { productFilter = c; renderProductLog(); }
-
-// ========== SLEEP ==========
-function renderSleep() {
-  const today = sleepData[TODAY] || {};
-  let html = '<input class="small-input" id="sleepBedtime" placeholder="睡觉时间（如 23:30）" value="' + escAttr(today.bedtime || '') + '">';
-  html += '<input class="small-input" id="sleepNote" placeholder="睡眠质量 / 备注" value="' + escAttr(today.note || '') + '">';
-  html += '<div class="habit-done-btn"><button class="btn-done" onclick="saveSleep()" style="margin-right:8px;">保存</button>'
-    + '<button class="btn-done btn-secondary" onclick="markSleepDone()">✅ 打卡早睡</button></div>';
-  const history = Object.entries(sleepData).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 5);
-  if (history.length > 0) {
-    html += '<div class="reading-log" style="margin-top:10px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">💤 最近</div>';
-    history.forEach(([d, r]) => { html += '<div style="font-size:11px;color:#888;margin-bottom:2px;">' + d + ' · ' + escHtml(r.bedtime||'') + ' · ' + escHtml(r.note||'') + '</div>'; });
-    html += '</div>';
-  } document.getElementById('sleepPanel').innerHTML = html;
-}
-function saveSleep() {
-  if (!sleepData[TODAY]) sleepData[TODAY] = {};
-  sleepData[TODAY].bedtime = document.getElementById('sleepBedtime').value.trim();
-  sleepData[TODAY].note = document.getElementById('sleepNote').value.trim();
-  SS('sleep_data', sleepData); renderSleep(); toast('已保存 💤');
-}
-function markSleepDone() { saveSleep(); if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['sleep'] = true; SS('habit_data', habitData); renderAll(); toast('✅ 已打卡早睡！'); }
 
 // ========== CUSTOM ==========
 function renderCustom() {
   const today = customData[TODAY] || [];
-  let html = '<div class="custom-task-row"><input id="customInput" placeholder="添加一个新任务……">'
-    + '<button onclick="addCustomTask()">+ 添加</button></div>';
+  let html = '<div class="custom-task-row"><input id="customInput" placeholder="任务描述"><input id="customMins" placeholder="分钟" style="width:50px;flex:none;" type="number" min="1" step="5" value="25"><button onclick="addCustomTask()">+ 添加</button></div>';
   if (today.length === 0) { html += '<div class="empty">今天还没有自定义任务</div>'; }
-  else {
-    html += today.map((t, i) => '<div class="custom-item" style="justify-content:space-between;">'
-      + '<div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleCustom(' + i + ')">'
-      + '<div class="task-check' + (t.done ? ' done' : '') + '">' + (t.done ? '✓' : '') + '</div>'
-      + '<span style="' + (t.done ? 'text-decoration:line-through;color:#aaa;' : '') + '">' + escHtml(t.text) + '</span></div>'
-      + '<span class="custom-x" onclick="deleteCustom(' + i + ')">✕</span></div>').join('');
-  }
+  else { html += today.map((t, i) => '<div class="custom-item" style="justify-content:space-between;"><div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleCustom('+i+')"><div class="task-check'+(t.done?' done':'')+'">'+(t.done?'✓':'')+'</div><span style="'+(t.done?'text-decoration:line-through;color:#d4a0b5;':'')+'">'+escHtml(t.text)+'</span><span style="font-size:10px;color:#b08896;margin-left:4px;">'+(t.mins||25)+'min</span></div><span class="custom-x" onclick="deleteCustom('+i+')">✕</span></div>').join(''); }
   document.getElementById('customPanel').innerHTML = html;
 }
-function addCustomTask() {
-  const text = document.getElementById('customInput').value.trim(); if (!text) return;
-  if (!customData[TODAY]) customData[TODAY] = [];
-  customData[TODAY].push({ text, done: false });
-  SS('custom_data', customData); renderCustom(); toast('已添加 ✓');
-}
-function toggleCustom(i) { customData[TODAY][i].done = !customData[TODAY][i].done; SS('custom_data', customData); renderCustom(); }
+function addCustomTask() { const text = document.getElementById('customInput').value.trim(); if (!text) return; const mins = parseInt(document.getElementById('customMins').value) || 25; if (!customData[TODAY]) customData[TODAY] = []; customData[TODAY].push({ text, done: false, mins }); SS('custom_data', customData); renderCustom(); toast('已添加 ✓'); }
+function toggleCustom(i) { const wasDone = customData[TODAY][i].done; customData[TODAY][i].done = !customData[TODAY][i].done; SS('custom_data', customData); if (!wasDone && customData[TODAY][i].done) { const mins = customData[TODAY][i].mins || 25; const tomatoes = Math.floor(mins / COIN_RULES.tomato_min); const earned = tomatoes * COIN_RULES.tomato_coin; if (earned > 0) earnCoins(earned, '自定义: ' + customData[TODAY][i].text.slice(0, 10) + ' ' + mins + 'min'); } renderCustom(); }
 function deleteCustom(i) { customData[TODAY].splice(i, 1); SS('custom_data', customData); renderCustom(); }
 
 // ========== NOTES ==========
-function saveNote() {
-  const body = document.getElementById('noteBody').value.trim(); if (!body) return;
-  notesData.push({ body, date: TODAY, tags: currentTags.slice() });
-  SS('notes_data', notesData); document.getElementById('noteBody').value = ''; currentTags = []; renderNotes(); toast('已保存 📝');
-}
-function addTag(tag) {
-  if (!currentTags.includes(tag)) currentTags.push(tag);
-  document.querySelectorAll('.btn-tag').forEach(b => { if (b.textContent === tag) { b.style.background = '#1a1a2e'; b.style.color = '#fff'; setTimeout(() => { b.style.background = ''; b.style.color = ''; }, 200); } });
-  toast('标签: ' + currentTags.join(', '));
-}
-function renderTagFilter() {
-  const tags = {}; notesData.forEach(n => { (n.tags||[]).forEach(t => { tags[t] = (tags[t]||0)+1; }); });
-  const e = Object.entries(tags).sort((a,b) => b[1]-a[1]);
-  if (e.length === 0) { document.getElementById('tagFilter').innerHTML = ''; return; }
-  let h = '<button class="tfilter' + (!currentFilter?' active':'') + '" onclick="setFilter(\'\')">全部</button>';
-  e.forEach(([t,c]) => { h += '<button class="tfilter' + (currentFilter===t?' active':'') + '" onclick="setFilter(\''+escAttr(t)+'\')">'+escHtml(t)+' ('+c+')</button>'; });
-  document.getElementById('tagFilter').innerHTML = h;
-}
-function setFilter(t) { currentFilter = t; SS('note_filter', currentFilter); renderNotes(); }
-function renderNotes() {
-  renderTagFilter();
-  let f = notesData.slice().reverse(); if (currentFilter) f = f.filter(n => (n.tags||[]).includes(currentFilter));
-  const l = document.getElementById('noteList');
-  if (f.length === 0) { l.innerHTML = '<div class="empty">' + (currentFilter?'这个标签下还没有笔记':'还没有笔记，写点什么吧') + '</div>'; return; }
-  l.innerHTML = f.map(n => { const i = notesData.indexOf(n);
-    return '<li class="note-item"><button class="note-delete" onclick="deleteNote('+i+')">✕</button>'
-      + '<div class="note-date">'+n.date+'</div><div class="note-body">'+escHtml(n.body)+'</div>'
-      + ((n.tags&&n.tags.length)?'<div class="note-tags">'+n.tags.map(t=>'<span class="note-tag">'+escHtml(t)+'</span>').join('')+'</div>':'')+'</li>';
-  }).join('');
-}
+function saveNote() { const body = document.getElementById('noteBody').value.trim(); if (!body) return; notesData.push({ body, date: TODAY, tags: currentTags.slice() }); SS('notes_data', notesData); document.getElementById('noteBody').value = ''; currentTags = []; renderNotes(); toast('已保存 📝'); }
+function addTag(tag) { if (!currentTags.includes(tag)) currentTags.push(tag); document.querySelectorAll('.btn-tag').forEach(b => { if (b.textContent === tag) { b.style.background = '#e8739e'; b.style.color = '#fff'; setTimeout(() => { b.style.background = ''; b.style.color = ''; }, 200); } }); toast('标签: ' + currentTags.join(', ')); }
+function renderTagFilter() { const tags = {}; notesData.forEach(n => { (n.tags||[]).forEach(t => { tags[t] = (tags[t]||0)+1; }); }); const e = Object.entries(tags).sort((a,b) => b[1]-a[1]); if (e.length===0) { document.getElementById('tagFilter').innerHTML=''; return; } let h='<button class="tfilter' + (!currentFilter?' active':'') + '" onclick="setFilter(\'\')">全部</button>'; e.forEach(([t,c]) => { h+='<button class="tfilter' + (currentFilter===t?' active':'') + '" onclick="setFilter(\''+escAttr(t)+'\')">'+escHtml(t)+' ('+c+')</button>'; }); document.getElementById('tagFilter').innerHTML=h; }
+function setFilter(t) { currentFilter=t; SS('note_filter', currentFilter); renderNotes(); }
+function renderNotes() { renderTagFilter(); let f=notesData.slice().reverse(); if (currentFilter) f=f.filter(n=>(n.tags||[]).includes(currentFilter)); const l=document.getElementById('noteList'); if (f.length===0) { l.innerHTML='<div class="empty">'+(currentFilter?'这个标签下还没有笔记':'还没有笔记，写点什么吧')+'</div>'; return; } l.innerHTML=f.map(n=>{ const i=notesData.indexOf(n); return '<li class="note-item"><button class="note-delete" onclick="deleteNote('+i+')">✕</button><div class="note-date">'+n.date+'</div><div class="note-body">'+escHtml(n.body)+'</div>' + ((n.tags&&n.tags.length)?'<div class="note-tags">'+n.tags.map(t=>'<span class="note-tag">'+escHtml(t)+'</span>').join('')+'</div>':'')+'</li>'; }).join(''); }
 function deleteNote(i) { notesData.splice(i, 1); SS('notes_data', notesData); renderNotes(); }
 
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escAttr(s) { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
-function toast(m) { const e = document.getElementById('toast'); e.innerHTML = m; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 1500); }
+function toast(m) { const e=document.getElementById('toast'); e.innerHTML=m; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'), 1800); }
 
-renderAll();
+// ========== INIT ==========
+updateCoinUI();
+renderHabitCards();
 </script>
 </body>
 </html>
