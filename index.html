@@ -78,7 +78,7 @@ body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; 
 .arabic-phase-nav button:active { background: #fef0f5; }
 .arabic-phase-nav button.warn { border-color: #ff9500; color: #ff9500; }
 
-/* Reading / Sleep / inputs */
+/* Shared inputs */
 .small-input, .product-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #f0c0d0; font-size: 13px; font-family: inherit; background: #fff; margin-bottom: 8px; }
 .small-input:focus, .product-input:focus { outline: none; border-color: #e8739e; }
 .reading-log { font-size: 12px; color: #b08896; margin-top: 4px; }
@@ -108,8 +108,6 @@ body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; 
 .custom-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-bottom: 4px; background: #fff5f8; border-radius: 8px; }
 .custom-item .custom-text { flex: 1; font-size: 14px; }
 .custom-item .custom-x { color: #e8b0c5; cursor: pointer; padding: 2px 6px; font-size: 16px; }
-
-/* notes */
 .note-input-area { margin-bottom: 12px; }
 .note-input-area textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #f0c0d0; font-size: 14px; font-family: inherit; background: #fff; min-height: 80px; resize: vertical; }
 .note-input-area textarea:focus { outline: none; border-color: #e8739e; }
@@ -175,7 +173,7 @@ body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; 
     </div>
     <div class="sidebar-coin">
       <div class="coin-val" id="coinBalance">0</div>
-      <div class="coin-lbl">💰 金币</div>
+      <div class="coin-lbl">💰 金币</div><div style="font-size:10px;color:#d4a0b5;cursor:pointer;margin-top:2px;" onclick="resetCoins()">重置</div>
     </div>
     <div class="sidebar-nav">
       <button class="nav-item active" onclick="switchPanel('daily')"><span class="ni-icon">🏠</span> 今日<span class="ni-badge" id="dailyBadge"></span></button>
@@ -206,8 +204,8 @@ body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; 
 
     <!-- ARABIC -->
     <div class="panel" id="panel-arabic">
-      <div class="section-title">阿语学习 <span style="font-size:12px;color:#d4a0b5;font-weight:400;" id="arabicTimeEst"></span></div>
-      <div id="arabicPlan"></div>
+      <div class="section-title">阿语学习</div>
+      <div id="arabicPanel"></div>
     </div>
 
     <!-- READING -->
@@ -227,7 +225,6 @@ body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; 
       <div class="section-title">自定义任务 <span style="font-size:12px;color:#d4a0b5;font-weight:400;">填分钟，每25min = +10💰</span></div>
       <div id="customPanel"></div>
     </div>
-
     <!-- NOTES -->
     <div class="panel" id="panel-notes">
       <div class="section-title">随手记</div>
@@ -298,7 +295,7 @@ function switchPanel(name) {
   document.getElementById('panel-' + name).classList.add('active');
   // Re-render the active panel
   if (name === 'daily') renderHabitCards();
-  if (name === 'arabic') renderArabicPlan();
+  if (name === 'arabic') renderArabic();
   if (name === 'reading') renderReading();
   if (name === 'skincare') renderSkincare();
   if (name === 'custom') renderCustom();
@@ -307,9 +304,6 @@ function switchPanel(name) {
 
 // ========== GLOBAL DATA ==========
 let habitData = S('habit_data', {});
-let arabicTaskData = S('arabic_task_data', {});
-let arabicPhase = S('arabic_phase', 0);
-let arabicDay = S('arabic_day', 1);
 let readingData = S('reading_data', {});
 let skincareRoutine = S('skincare_routine', [
   { id:'s1', name:'卸妆 / 洁面', product:'', rating:0, productNote:'' },
@@ -385,7 +379,7 @@ function toggleHabit(id) {
     const refund = (habitEarnedCoins[TODAY] && habitEarnedCoins[TODAY][id]) || 0;
     if (refund > 0) {
       coinBalance -= refund;
-      coinHistory.push({ date: TODAY, amount: '-' + refund, reason: '取消' + (id==='reading'?'阅读':'护肤') });
+      coinHistory.push({ date: TODAY, amount: '-' + refund, reason: '取消' + (id==='reading'?'阅读':id==='arabic'?'阿语':'护肤') });
       SS('coin_balance', coinBalance); SS('coin_history', coinHistory);
       delete habitEarnedCoins[TODAY][id];
       SS('habit_earned_coins', habitEarnedCoins);
@@ -396,158 +390,42 @@ function toggleHabit(id) {
   toast(habitData[TODAY][id] ? '已打卡 🎉' : '已取消');
 }
 
-// ========== ARABIC ==========
-const ALL_LETTERS = [
-  { name:'alif', iso:'ا', ini:'ا', med:'ـا', fin:'ـا', sound:'long vowel /aː/', nc:true },
-  { name:'bāʾ', iso:'ب', ini:'بـ', med:'ـبـ', fin:'ـب', sound:'/b/' },
-  { name:'tāʾ', iso:'ت', ini:'تـ', med:'ـتـ', fin:'ـت', sound:'/t/' },
-  { name:'thāʾ', iso:'ث', ini:'ثـ', med:'ـثـ', fin:'ـث', sound:'/θ/' },
-  { name:'jīm', iso:'ج', ini:'جـ', med:'ـجـ', fin:'ـج', sound:'/dʒ/' },
-  { name:'ḥāʾ', iso:'ح', ini:'حـ', med:'ـحـ', fin:'ـح', sound:'/ħ/' },
-  { name:'khāʾ', iso:'خ', ini:'خـ', med:'ـخـ', fin:'ـخ', sound:'/x/' },
-  { name:'dāl', iso:'د', ini:'د', med:'ـد', fin:'ـد', sound:'/d/', nc:true },
-  { name:'dhāl', iso:'ذ', ini:'ذ', med:'ـذ', fin:'ـذ', sound:'/ð/', nc:true },
-  { name:'rāʾ', iso:'ر', ini:'ر', med:'ـر', fin:'ـر', sound:'/r/', nc:true },
-  { name:'zāy', iso:'ز', ini:'ز', med:'ـز', fin:'ـز', sound:'/z/', nc:true },
-  { name:'sīn', iso:'س', ini:'سـ', med:'ـسـ', fin:'ـس', sound:'/s/' },
-  { name:'shīn', iso:'ش', ini:'شـ', med:'ـشـ', fin:'ـش', sound:'/ʃ/' },
-  { name:'ṣād', iso:'ص', ini:'صـ', med:'ـصـ', fin:'ـص', sound:'/sˤ/' },
-  { name:'ḍād', iso:'ض', ini:'ضـ', med:'ـضـ', fin:'ـض', sound:'/dˤ/' },
-  { name:'ṭāʾ', iso:'ط', ini:'طـ', med:'ـطـ', fin:'ـط', sound:'/tˤ/' },
-  { name:'ẓāʾ', iso:'ظ', ini:'ظـ', med:'ـظـ', fin:'ـظ', sound:'/ðˤ/' },
-  { name:'ʿayn', iso:'ع', ini:'عـ', med:'ـعـ', fin:'ـع', sound:'/ʕ/' },
-  { name:'ghayn', iso:'غ', ini:'غـ', med:'ـغـ', fin:'ـغ', sound:'/ɣ/' },
-  { name:'fāʾ', iso:'ف', ini:'فـ', med:'ـفـ', fin:'ـف', sound:'/f/' },
-  { name:'qāf', iso:'ق', ini:'قـ', med:'ـقـ', fin:'ـق', sound:'/q/' },
-  { name:'kāf', iso:'ك', ini:'كـ', med:'ـكـ', fin:'ـك', sound:'/k/' },
-  { name:'lām', iso:'ل', ini:'لـ', med:'ـلـ', fin:'ـل', sound:'/l/' },
-  { name:'mīm', iso:'م', ini:'مـ', med:'ـمـ', fin:'ـم', sound:'/m/' },
-  { name:'nūn', iso:'ن', ini:'نـ', med:'ـنـ', fin:'ـن', sound:'/n/' },
-  { name:'hāʾ', iso:'ه', ini:'هـ', med:'ـهـ', fin:'ـه', sound:'/h/' },
-  { name:'wāw', iso:'و', ini:'و', med:'ـو', fin:'ـو', sound:'/w/, long /uː/', nc:true },
-  { name:'yāʾ', iso:'ي', ini:'يـ', med:'ـيـ', fin:'ـي', sound:'/j/, long /iː/' },
-];
-function generateDailyPlan() {
-  const plans = [];
-  if (arabicPhase === 0) {
-    const d = arabicDay, groupIdx = Math.min(Math.floor((d-1)/4), 5), subDay = ((d-1)%4)+1;
-    const gStart = [0,7,11,15,19,24][groupIdx], gEnd = [6,10,14,18,23,27][groupIdx];
-    const gLetters = ALL_LETTERS.slice(gStart, gEnd+1);
-    const prevLetters = ALL_LETTERS.slice(0, gStart);
-    if (subDay === 1) {
-      const half = gLetters.slice(0, Math.ceil(gLetters.length/2));
-      plans.push({id:'new_letters',title:'学习新字母',desc:half.map(l=>l.name).join(' + '),
-        detail:'<div class="arabic-letters-row">'+half.map(l=>l.iso).join(' ')+'</div>每个字母抄写四种形态各一行。',time:'30 min'});
-    } else if (subDay === 2) {
-      const half = gLetters.slice(Math.ceil(gLetters.length/2));
-      plans.push({id:'new_letters',title:'学习新字母',desc:half.map(l=>l.name).join(' + '),
-        detail:'<div class="arabic-letters-row">'+half.map(l=>l.iso).join(' ')+'</div>每个字母抄写四种形态各一行。注意区分 emphatic 和非 emphatic。',time:'30 min'});
-    } else if (subDay === 3) {
-      plans.push({id:'review_group',title:'复习本组字母',desc:gLetters.map(l=>l.iso).join(' ')+' （'+gLetters.length+' 个）',detail:'默写四种形态。不记得的翻回去看，红笔补上。',time:'25 min'});
-      plans.push({id:'pronounce',title:'发音精练',desc:'👄 录下自己朗读已学字母，对比标准发音',detail:'YouTube: "Arabic Alphabet Pronunciation"。',time:'15 min'});
-    } else {
-      plans.push({id:'dictation',title:'听写练习',desc:'👂 用已学字母听写简单单词',detail:'用 Duolingo 字母练习，或让视频读字母/短词，你写下来。',time:'20 min'});
-      if (prevLetters.length >= 4) plans.push({id:'copy_words',title:'临摹短词',desc:'抄写 5 个单词',detail:'如: باب (bāb), كتاب (kitāb), قلم (qalam)。每个词抄 5 遍。',time:'20 min'});
-    }
-    plans.push({id:'listen',title:'听力浸泡',desc:'🎧 听 10 分钟阿拉伯语',detail:'闭眼听 Arabic alphabet song。',time:'10 min'});
-    if (d%7===6||d%7===0) plans.push({id:'handwriting',title:'书法练习（周末）',desc:'✍️ 用阿语字母拼写你的中文名字',detail:'尝试把"朱彦澄"拼成阿语。',time:'15 min'});
-  } else if (arabicPhase === 1) {
-    plans.push({id:'daily_words',title:'每日生词',desc:'学习 8–10 个新单词，每个抄写 3 遍 + 标元音',detail:'从教材或常用 500 词表中选。不背拼写，先做到"看到能读"。',time:'30 min'});
-    plans.push({id:'flashcards',title:'闪卡复习',desc:'用 Quizlet/Anki 复习旧词',detail:'每天至少过 20 个。',time:'20 min'});
-    plans.push({id:'dictation2',title:'听写单词',desc:'10 个学过的单词，听写下来',detail:'错一个抄三遍。',time:'15 min'});
-    plans.push({id:'listen_phase1',title:'听力浸泡',desc:'🎧 阿拉伯语初学者对话视频',detail:'YouTube: "Arabic beginner conversation"。',time:'15 min'});
-  } else if (arabicPhase === 2) {
-    plans.push({id:'daily_sentences',title:'每日短句',desc:'3–5 个短句，抄写 + 翻译 + 朗读',detail:'标出主语、谓语、宾语。',time:'30 min'});
-    plans.push({id:'grammar',title:'语法点',desc:'每天一个基础语法点',detail:'如: 定冠词 الـ、阴阳性、名词句 vs 动词句。',time:'20 min'});
-    plans.push({id:'back_translate',title:'回译练习',desc:'昨天的 3 个句子，看中文翻回阿语',detail:'不看原文，写完对照改错。',time:'15 min'});
-    plans.push({id:'read_aloud',title:'朗读录音',desc:'🎙️ 朗读本周所有句子并录音',detail:'回放对比标准发音。',time:'10 min'});
-  }
-  return plans;
-}
-function renderArabicPlan() {
-  const plans = generateDailyPlan();
-  const todayTasks = arabicTaskData[TODAY] || {};
-  const allDone = plans.every(p => todayTasks[p.id]);
-  let totalMin = 0;
-  const phaseNames = ['字母关', '拼读关', '句法入门'];
-  let html = '<div class="phase-badge">阶段 ' + (arabicPhase+1) + '/3 · ' + phaseNames[arabicPhase] + ' · 第 ' + arabicDay + ' 天</div>';
-  plans.forEach(p => {
-    const done = todayTasks[p.id] || false;
-    html += '<div class="arabic-task"><div class="task-check' + (done ? ' done' : '') + '" onclick="toggleArabicTask(\'' + p.id + '\')">' + (done ? '✓' : '') + '</div>'
-      + '<div class="task-info"><div class="task-desc"><b>' + p.title + '</b> · ' + p.desc + '</div>'
-      + '<div class="task-detail">' + p.detail + '</div><div class="task-time">⏱ ' + p.time + '</div></div></div>';
-    const m = p.time.match(/(\d+)/); if (m) totalMin += parseInt(m[1]);
-  });
-  const doneCount = plans.filter(p => todayTasks[p.id]).length;
-  const tomatoes = Math.floor(totalMin / COIN_RULES.tomato_min);
+let arabicData = S('arabic_data', {});
+
+function renderArabic() {
+  const today = arabicData[TODAY] || {};
+  const history = Object.entries(arabicData).sort((a,b) => b[0].localeCompare(a[0])).slice(0, 5);
+  const mins = parseInt(today.pages) || 0;
+  const tomatoes = Math.floor(mins / COIN_RULES.tomato_min);
   const estCoins = tomatoes * COIN_RULES.tomato_coin;
-  html += '<div class="arabic-progress"><div class="prog-label">' + doneCount + '/' + plans.length + ' 项</div>'
-    + '<div class="prog-bar"><div class="prog-fill" style="width:' + Math.round(doneCount/plans.length*100) + '%"></div></div>'
-    + '<div class="prog-label">~' + totalMin + 'min = ' + tomatoes + '🍅</div></div>';
-  html += '<div class="arabic-full-done"><button class="btn-done" onclick="markArabicAllDone()">'
-    + (allDone ? '✅ 全部完成' : '→ 今日全部完成，打卡阿语 +' + estCoins + '💰') + '</button></div>';
-  html += '<div class="arabic-phase-nav"><button onclick="switchPhase(0)">字母关</button><button onclick="switchPhase(1)">拼读关</button>'
-    + '<button onclick="switchPhase(2)">句法入门</button><button class="warn" onclick="resetArabic()">重置</button></div>';
-  document.getElementById('arabicPlan').innerHTML = html;
-  document.getElementById('arabicTimeEst').textContent = '约 ' + totalMin + ' 分钟';
+  let html = '<input class="small-input" id="arabicMins" placeholder="今天多邻国 XX 分钟" type="number" min="1" step="5" value="' + escAttr(today.pages || '') + '">';
+  html += '<div style="font-size:11px;color:#b08896;margin-bottom:8px;">每' + COIN_RULES.tomato_min + 'min = 1🍅 = ' + COIN_RULES.tomato_coin + '💰' + (mins > 0 ? ' · 预计 ' + tomatoes + '🍅 +' + estCoins + '💰' : '') + '</div>';
+  html += '<div class="habit-done-btn"><button class="btn-done" onclick="saveArabic()" style="margin-right:8px;">保存</button>'
+    + '<button class="btn-done btn-secondary" onclick="markArabicDone()">✅ 打卡阿语 +' + (estCoins || 10) + '💰</button></div>';
+  if (history.length > 0) {
+    html += '<div class="reading-log" style="margin-top:10px;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;color:#4a2535;">📖 最近</div>';
+    history.forEach(([d, r]) => { if (!r.pages) return;
+      html += '<div style="font-size:11px;margin-bottom:2px;">' + d + ' · ' + escHtml(r.pages||'') + 'min</div>'; });
+    html += '</div>';
+  } document.getElementById('arabicPanel').innerHTML = html;
 }
-function toggleArabicTask(id) {
-  if (!arabicTaskData[TODAY]) arabicTaskData[TODAY] = {};
-  arabicTaskData[TODAY][id] = !arabicTaskData[TODAY][id];
-  SS('arabic_task_data', arabicTaskData); renderArabicPlan();
+function saveArabic() {
+  if (!arabicData[TODAY]) arabicData[TODAY] = {};
+  arabicData[TODAY].pages = document.getElementById('arabicMins').value.trim();
+  SS('arabic_data', arabicData); renderArabic(); toast('已保存 📝');
 }
-function markArabicAllDone() {
-  const plans = generateDailyPlan();
-  if (!arabicTaskData[TODAY]) arabicTaskData[TODAY] = {};
-  const allDone = plans.every(p => arabicTaskData[TODAY][p.id]);
-  if (allDone) {
-    // UNCHECK: refund coins
-    plans.forEach(p => { delete arabicTaskData[TODAY][p.id]; });
-    if (habitData[TODAY]) delete habitData[TODAY]['arabic'];
-    SS('arabic_task_data', arabicTaskData); SS('habit_data', habitData);
-    if (habitEarnedToday[TODAY]) delete habitEarnedToday[TODAY]['arabic_all'];
-    const refund = (habitEarnedCoins[TODAY] && habitEarnedCoins[TODAY]['arabic']) || 0;
-    if (refund > 0) {
-      coinBalance -= refund;
-      coinHistory.push({ date: TODAY, amount: '-' + refund, reason: '取消阿语' });
-      SS('coin_balance', coinBalance); SS('coin_history', coinHistory);
-      delete habitEarnedCoins[TODAY]['arabic'];
-      SS('habit_earned_coins', habitEarnedCoins);
-    }
-    updateCoinUI();
-    if (currentPanel==='arabic') renderArabicPlan(); else if (currentPanel==='daily') renderHabitCards();
-    toast('已取消'); return;
-  }
-  plans.forEach(p => { arabicTaskData[TODAY][p.id] = true; });
-  if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['arabic'] = true;
-
-  // Calculate coins from total time
-  let totalMin = 0;
-  plans.forEach(p => { const m = p.time.match(/(\d+)/); if (m) totalMin += parseInt(m[1]); });
-  const tomatoes = Math.floor(totalMin / COIN_RULES.tomato_min);
-  const earned = tomatoes * COIN_RULES.tomato_coin;
-
-  if (!habitEarnedToday[TODAY]) habitEarnedToday[TODAY] = {};
-  if (!habitEarnedToday[TODAY]['arabic_all']) {
-    habitEarnedToday[TODAY]['arabic_all'] = true;
-    SS('habit_earned_today', habitEarnedToday);
-    if (earned > 0) {
-      if (!habitEarnedCoins[TODAY]) habitEarnedCoins[TODAY] = {};
-      habitEarnedCoins[TODAY]['arabic'] = earned;
-      SS('habit_earned_coins', habitEarnedCoins);
-      earnCoins(earned, '阿语 ' + totalMin + 'min = ' + tomatoes + '🍅');
-    }
-  }
-
-  const c = new Set(); Object.keys(arabicTaskData).forEach(d => { if (Object.keys(arabicTaskData[d]).length >= 3) c.add(d); });
-  arabicDay = Math.min(c.size + 1, 28); SS('arabic_day', arabicDay);
-  SS('arabic_task_data', arabicTaskData); SS('habit_data', habitData);
-  updateCoinUI(); renderArabicPlan(); toast('✅ 阿语打卡完成！');
+function markArabicDone() {
+  saveArabic();
+  if (!habitData[TODAY]) habitData[TODAY] = {}; habitData[TODAY]['arabic'] = true; SS('habit_data', habitData);
+  const mins = parseInt((arabicData[TODAY] && arabicData[TODAY].pages) || 25);
+  const tomatoes = Math.floor(mins / COIN_RULES.tomato_min) || 1;
+  const coins = tomatoes * COIN_RULES.tomato_coin;
+  if (!habitEarnedCoins[TODAY]) habitEarnedCoins[TODAY] = {};
+  habitEarnedCoins[TODAY]['arabic'] = coins;
+  SS('habit_earned_coins', habitEarnedCoins);
+  earnCoins(coins, '阿语 ' + mins + 'min = ' + tomatoes + '🍅');
+  updateCoinUI(); renderArabic(); toast('✅ 已打卡阿语！');
 }
-function switchPhase(p) { arabicPhase = p; arabicDay = 1; SS('arabic_phase', p); SS('arabic_day', 1); renderArabicPlan(); }
-function resetArabic() { if (!confirm('确定重置阿语进度？')) return;
-  localStorage.removeItem('arabic_phase'); localStorage.removeItem('arabic_day'); localStorage.removeItem('arabic_task_data');
-  arabicPhase = 0; arabicDay = 1; arabicTaskData = {}; renderArabicPlan(); toast('已重置'); }
 
 // ========== READING ==========
 function renderReading() {
@@ -717,6 +595,7 @@ function renderCustom() {
 function addCustomTask() { const text = document.getElementById('customInput').value.trim(); if (!text) return; const mins = parseInt(document.getElementById('customMins').value) || 25; if (!customData[TODAY]) customData[TODAY] = []; customData[TODAY].push({ text, done: false, mins }); SS('custom_data', customData); renderCustom(); toast('已添加 ✓'); }
 function toggleCustom(i) { const wasDone = customData[TODAY][i].done; customData[TODAY][i].done = !customData[TODAY][i].done; SS('custom_data', customData); if (!wasDone && customData[TODAY][i].done) { const mins = customData[TODAY][i].mins || 25; const tomatoes = Math.floor(mins / COIN_RULES.tomato_min); const earned = tomatoes * COIN_RULES.tomato_coin; if (earned > 0) earnCoins(earned, '自定义: ' + customData[TODAY][i].text.slice(0, 10) + ' ' + mins + 'min'); } renderCustom(); }
 function deleteCustom(i) { customData[TODAY].splice(i, 1); SS('custom_data', customData); renderCustom(); }
+
 
 // ========== NOTES ==========
 function saveNote() { const body = document.getElementById('noteBody').value.trim(); if (!body) return; notesData.push({ body, date: TODAY, tags: currentTags.slice() }); SS('notes_data', notesData); document.getElementById('noteBody').value = ''; currentTags = []; renderNotes(); toast('已保存 📝'); }
