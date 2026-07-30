@@ -587,13 +587,65 @@ function setProductFilter(c) { productFilter = c; renderProductLog(); }
 // ========== CUSTOM ==========
 function renderCustom() {
   const today = customData[TODAY] || [];
-  let html = '<div class="custom-task-row"><input id="customInput" placeholder="任务描述"><input id="customMins" placeholder="分钟" style="width:50px;flex:none;" type="number" min="1" step="5" value="25"><button onclick="addCustomTask()">+ 添加</button></div>';
+  let html = '<div class="custom-task-row"><input id="customInput" placeholder="任务描述"><input id="customMins" placeholder="预计分钟" style="width:70px;flex:none;" type="number" min="1" step="5" value="25"><button onclick="addCustomTask()">+ 添加</button></div>';
   if (today.length === 0) { html += '<div class="empty">今天还没有自定义任务</div>'; }
-  else { html += today.map((t, i) => '<div class="custom-item" style="justify-content:space-between;"><div style="display:flex;align-items:center;gap:8px;cursor:pointer;" onclick="toggleCustom('+i+')"><div class="task-check'+(t.done?' done':'')+'">'+(t.done?'✓':'')+'</div><span style="'+(t.done?'text-decoration:line-through;color:#d4a0b5;':'')+'">'+escHtml(t.text)+'</span><span style="font-size:10px;color:#b08896;margin-left:4px;">'+(t.mins||25)+'min</span></div><span class="custom-x" onclick="deleteCustom('+i+')">✕</span></div>').join(''); }
+  else {
+    html += today.map((t, i) => {
+      const done = t.done || false;
+      const doneMins = t.doneMins || 0;
+      const total = t.mins || 25;
+      const pct = Math.round(doneMins / total * 100);
+      return '<div style="padding:8px 10px;margin-bottom:4px;background:#fff5f8;border-radius:8px;">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+        + '<div class="task-check' + (done ? ' done' : '') + '" onclick="toggleCustom(' + i + ')" style="cursor:pointer;">' + (done ? '✓' : '') + '</div>'
+        + '<span style="flex:1;font-size:14px;' + (done ? 'text-decoration:line-through;color:#d4a0b5;' : '') + '">' + escHtml(t.text) + '</span>'
+        + '<span class="custom-x" onclick="deleteCustom(' + i + ')">✕</span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:6px;padding-left:30px;">'
+        + '<input type="number" id="customProgress' + i + '" value="' + doneMins + '" min="0" max="' + total + '" style="width:55px;padding:4px 6px;border-radius:6px;border:1px solid #f0c0d0;font-size:11px;font-family:inherit;" onchange="updateCustomProgress(' + i + ',this.value)">'
+        + '<span style="font-size:10px;color:#b08896;">/ ' + total + 'min</span>'
+        + '<div style="flex:1;height:4px;background:#fce4ec;border-radius:2px;overflow:hidden;">'
+        + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,#e8739e,#db4d8a);border-radius:2px;"></div></div>'
+        + '<span style="font-size:10px;color:#b08896;">' + pct + '%</span>'
+        + '</div></div>';
+    }).join('');
+  }
   document.getElementById('customPanel').innerHTML = html;
 }
 function addCustomTask() { const text = document.getElementById('customInput').value.trim(); if (!text) return; const mins = parseInt(document.getElementById('customMins').value) || 25; if (!customData[TODAY]) customData[TODAY] = []; customData[TODAY].push({ text, done: false, mins }); SS('custom_data', customData); renderCustom(); toast('已添加 ✓'); }
-function toggleCustom(i) { const wasDone = customData[TODAY][i].done; customData[TODAY][i].done = !customData[TODAY][i].done; SS('custom_data', customData); if (!wasDone && customData[TODAY][i].done) { const mins = customData[TODAY][i].mins || 25; const tomatoes = Math.floor(mins / COIN_RULES.tomato_min); const earned = tomatoes * COIN_RULES.tomato_coin; if (earned > 0) earnCoins(earned, '自定义: ' + customData[TODAY][i].text.slice(0, 10) + ' ' + mins + 'min'); } renderCustom(); }
+function toggleCustom(i) {
+  const t = customData[TODAY][i];
+  const wasDone = t.done;
+  t.done = !t.done;
+  if (!wasDone && t.done) {
+    // Mark done: set progress to full and earn coins
+    t.doneMins = t.mins || 25;
+    const tomatoes = Math.floor(t.doneMins / COIN_RULES.tomato_min);
+    const earned = tomatoes * COIN_RULES.tomato_coin;
+    if (earned > 0) earnCoins(earned, '完成: ' + t.text.slice(0, 10) + ' ' + t.doneMins + 'min');
+  } else if (wasDone && !t.done) {
+    // Undo: refund coins based on what was earned
+    const doneMins = t.doneMins || 25;
+    const tomatoes = Math.floor(doneMins / COIN_RULES.tomato_min);
+    const earned = tomatoes * COIN_RULES.tomato_coin;
+    if (earned > 0) {
+      coinBalance -= earned;
+      coinHistory.push({ date: TODAY, amount: '-' + earned, reason: '取消: ' + t.text.slice(0, 10) });
+      SS('coin_balance', coinBalance); SS('coin_history', coinHistory);
+    }
+    t.doneMins = 0;
+    updateCoinUI();
+  }
+  SS('custom_data', customData); renderCustom();
+}
+function updateCustomProgress(i, val) {
+  const v = parseInt(val) || 0;
+  const t = customData[TODAY][i];
+  const total = t.mins || 25;
+  t.doneMins = Math.max(0, Math.min(total, v));
+  t.done = t.doneMins >= total;
+  SS('custom_data', customData); renderCustom();
+}
 function deleteCustom(i) { customData[TODAY].splice(i, 1); SS('custom_data', customData); renderCustom(); }
 
 
