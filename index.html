@@ -189,7 +189,7 @@ body { font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; 
         <option value="">分类</option><option value="衣服">衣服</option><option value="护肤">护肤</option>
         <option value="吃喝">吃喝</option><option value="游戏">游戏</option><option value="其他">其他</option>
       </select>
-      <button onclick="spendCoins()">💸 扣金币</button>
+      <button onclick="spendCoins()" style="margin-bottom:4px;">💸 扣金币</button><button onclick="resetAllData()" style="width:100%;padding:4px;border-radius:6px;border:1px solid #ffaaaa;background:#fff;color:#cc6666;font-size:10px;cursor:pointer;font-family:inherit;">🔄 重置所有数据</button>
     </div>
     <div class="coin-mini-history" id="coinHistory"></div>
   </div>
@@ -659,6 +659,10 @@ function deleteNote(i) { notesData.splice(i, 1); SS('notes_data', notesData); re
 
 function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escAttr(s) { return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+function resetAllData() { if(!confirm("确定重置金币和今日打卡记录？（笔记、产品、护肤步骤等不受影响）")) return;
+  ['coin_balance','coin_history','habit_data','habit_earned_today','habit_earned_coins','arabic_task_data','skincare_done','custom_data','reading_data','arabic_data'].forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
 function toast(m) { const e=document.getElementById('toast'); e.innerHTML=m; e.classList.add('show'); setTimeout(()=>e.classList.remove('show'), 1800); }
 
 // ========== INIT ==========
